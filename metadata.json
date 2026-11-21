@@ -1,0 +1,8 @@
+{
+  "name": "SaludConectada",
+  "description": "Plataforma clínica ejecutiva para optimización de agenda ambulatoria, predicción de ausentismo (No-Show) con BigQuery ML y cálculo de ROI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
