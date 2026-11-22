@@ -5,7 +5,7 @@ import {
   ArcElement,
   type ChartConfiguration,
 } from 'chart.js';
-import { Info, Loader2, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, Info, Loader2, Sparkles, SlidersHorizontal } from 'lucide-react';
 import type {
   SimHistoryItem,
   SimulatorFeatures,
@@ -303,18 +303,18 @@ export function SimulatorSection({
           className="order-2 space-y-3.5 lg:order-1 lg:col-span-7"
         >
           {/* BLOQUE 1 — Factores Determinantes de Riesgo (~88%) */}
-          <div className="space-y-2.5 rounded-xl border border-amber-300 bg-amber-50/40 p-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2">
-              <h3 className="text-xs font-bold text-amber-950">
+          <div className="space-y-2.5 rounded-xl border border-slate-200 border-l-4 border-l-amber-500 bg-white p-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-bold text-slate-900">
                 Nivel 1: Factores Críticos de Contacto e Historial (~88% del peso en BQML)
               </h3>
-              <span className="font-mono text-[11px] font-bold text-red-700">
+              <span className="font-mono text-[11px] font-bold text-amber-700">
                 Determinantes principales
               </span>
             </div>
 
             {/* 1. sms_confirmed */}
-            <div className="rounded-lg border border-amber-200 bg-white px-3 py-2.5">
+            <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -333,7 +333,7 @@ export function SimulatorSection({
                 <div
                   role="group"
                   aria-label="Confirmación SMS Previa"
-                  className="grid shrink-0 grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1"
+                  className="grid shrink-0 grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-white p-1"
                 >
                   <button
                     type="button"
@@ -365,14 +365,14 @@ export function SimulatorSection({
 
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {/* 2. prior_no_shows */}
-              <div className="rounded-lg border border-amber-200 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
                   <label htmlFor="f-prior_no_shows">Faltas previas</label>
-                  <span className="font-mono font-bold text-amber-800 tabular-nums">
+                  <span className="font-mono font-bold text-amber-700 tabular-nums">
                     {features.prior_no_shows}
                   </span>
                 </div>
-                <p className="mt-0.5 font-mono text-[10px] font-medium text-amber-900">
+                <p className="mt-0.5 font-mono text-[10px] font-medium text-slate-600">
                   #2 · ~21% (+0.0251 | Escalón &gt;=1 falta)
                 </p>
                 <input
@@ -392,14 +392,14 @@ export function SimulatorSection({
               </div>
 
               {/* 3. lead_time_days */}
-              <div className="rounded-lg border border-amber-200 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
                   <label htmlFor="f-lead_time_days">Días de anticipación</label>
-                  <span className="font-mono font-bold text-amber-800 tabular-nums">
+                  <span className="font-mono font-bold text-amber-700 tabular-nums">
                     {features.lead_time_days} d
                   </span>
                 </div>
-                <p className="mt-0.5 font-mono text-[10px] font-medium text-amber-900">
+                <p className="mt-0.5 font-mono text-[10px] font-medium text-slate-600">
                   #3 · ~15% (+0.0033/d | Quiebre &gt;15d y &gt;30d)
                 </p>
                 <input
@@ -421,19 +421,19 @@ export function SimulatorSection({
           </div>
 
           {/* BLOQUE 2 — Factores Operativos de Sede, Canal y Cobertura (~9%) */}
-          <div className="space-y-2.5 rounded-xl border border-sky-200 bg-sky-50/30 p-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/70 pb-2">
-              <h3 className="text-xs font-bold text-sky-950">
+          <div className="space-y-2.5 rounded-xl border border-slate-200 border-l-4 border-l-sky-600 bg-white p-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-bold text-slate-900">
                 Nivel 2: Contexto Operativo de Reserva y Sede (~9% del peso en BQML)
               </h3>
-              <span className="font-mono text-[11px] font-semibold text-sky-800">
+              <span className="font-mono text-[11px] font-semibold text-sky-700">
                 Peso operativo
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {/* 4. center_city */}
-              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <label
                     htmlFor="f-center_city"
@@ -441,7 +441,7 @@ export function SimulatorSection({
                   >
                     Ciudad de la sede
                   </label>
-                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                  <span className="font-mono text-[10px] font-semibold text-sky-700">
                     ~3.2%
                   </span>
                 </div>
@@ -463,7 +463,7 @@ export function SimulatorSection({
               </div>
 
               {/* 5. specialty */}
-              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <label
                     htmlFor="f-specialty"
@@ -471,7 +471,7 @@ export function SimulatorSection({
                   >
                     Especialidad
                   </label>
-                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                  <span className="font-mono text-[10px] font-semibold text-sky-700">
                     ~2.5%
                   </span>
                 </div>
@@ -493,7 +493,7 @@ export function SimulatorSection({
               </div>
 
               {/* 6. appointment_channel */}
-              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <label
                     htmlFor="f-appointment_channel"
@@ -501,7 +501,7 @@ export function SimulatorSection({
                   >
                     Canal de reserva
                   </label>
-                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                  <span className="font-mono text-[10px] font-semibold text-sky-700">
                     ~2.0%
                   </span>
                 </div>
@@ -522,7 +522,7 @@ export function SimulatorSection({
               </div>
 
               {/* 7. insurance_type */}
-              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <label
                     htmlFor="f-insurance_type"
@@ -530,7 +530,7 @@ export function SimulatorSection({
                   >
                     Tipo de seguro
                   </label>
-                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                  <span className="font-mono text-[10px] font-semibold text-sky-700">
                     ~1.3%
                   </span>
                 </div>
@@ -552,20 +552,27 @@ export function SimulatorSection({
             </div>
           </div>
 
-          {/* BLOQUE 3 — Variables Clínicas de Triaje JSON y Demografía (~3%) */}
-          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
-              <h3 className="text-xs font-bold text-slate-800">
-                Nivel 3: Variables Clínicas de Triaje y Demografía (~3% de ajuste fino en BQML)
-              </h3>
-              <span className="font-mono text-[11px] font-medium text-slate-500">
-                Ajuste fino
+          {/* BLOQUE 3 — Variables Clínicas de Triaje JSON y Demografía (~3%) colapsado por defecto */}
+          <details className="group rounded-xl border border-slate-200 border-l-4 border-l-slate-300 bg-white p-3.5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-bold text-slate-800 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+              <span className="leading-snug">
+                Nivel 3: Triaje y Demografía (~3% ajuste fino) —{' '}
+                <span className="font-mono font-semibold text-slate-600 tabular-nums">
+                  {features.systolic_bp} mmHg · {features.age} años · {features.chronic_conditions} crón.
+                </span>
               </span>
-            </div>
+              <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[11px] font-medium text-slate-500">
+                <span>Ajustar</span>
+                <ChevronDown
+                  className="h-4 w-4 transition-transform duration-200 group-open:rotate-180"
+                  aria-hidden="true"
+                />
+              </span>
+            </summary>
 
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-2.5 border-t border-slate-100 pt-3 sm:grid-cols-2 xl:grid-cols-3">
               {/* 8. chronic_conditions */}
-              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                   <label htmlFor="f-chronic_conditions">Cond. crónicas</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
@@ -594,7 +601,7 @@ export function SimulatorSection({
               </div>
 
               {/* 9. gender */}
-              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <label
                     htmlFor="f-gender"
@@ -619,7 +626,7 @@ export function SimulatorSection({
               </div>
 
               {/* 10. systolic_bp */}
-              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                   <label htmlFor="f-systolic_bp">Presión sist.</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
@@ -646,7 +653,7 @@ export function SimulatorSection({
               </div>
 
               {/* 11. age */}
-              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                   <label htmlFor="f-age">Edad</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
@@ -673,7 +680,7 @@ export function SimulatorSection({
               </div>
 
               {/* 12. capacity_daily */}
-              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 sm:col-span-1 xl:col-span-2">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/40 px-3 py-2.5 sm:col-span-1 xl:col-span-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                   <label htmlFor="f-capacity_daily">Capacidad diaria sede</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
@@ -699,39 +706,7 @@ export function SimulatorSection({
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Botones */}
-          <div className="flex flex-wrap items-center gap-3 pt-0.5">
-            <button
-              type="submit"
-              disabled={loadingPredict || loadingWhatIf}
-              className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loadingPredict && (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              )}
-              <span>
-                {loadingPredict
-                  ? 'Consultando BigQuery ML…'
-                  : 'Evaluar Riesgo en BigQuery ML'}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleWhatIf}
-              disabled={loadingPredict || loadingWhatIf}
-              className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loadingWhatIf ? (
-                <Loader2 className="h-4 w-4 animate-spin text-sky-700" aria-hidden="true" />
-              ) : (
-                <Sparkles className="h-4 w-4 text-sky-600" aria-hidden="true" />
-              )}
-              <span>¿Qué pasaría si…?</span>
-            </button>
-          </div>
+          </details>
         </form>
 
         {/* PANEL DE RESULTADO Y PROTOCOLO (Sticky en Desktop, Primero en Mobile) */}
@@ -808,27 +783,6 @@ export function SimulatorSection({
               </div>
             </div>
 
-            {/* Botones rápidos visibles en móvil arriba junto al gauge */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 lg:hidden">
-              <button
-                type="button"
-                onClick={() => void executePrediction(features)}
-                disabled={loadingPredict || loadingWhatIf}
-                className="inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-sky-600 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-sky-700 disabled:opacity-60"
-              >
-                {loadingPredict && (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                )}
-                <span>Evaluar Riesgo BQML</span>
-              </button>
-              <a
-                href="#sim-form-controls"
-                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Editar 12 variables ↓
-              </a>
-            </div>
-
             {errorMsg && (
               <div
                 role="alert"
@@ -858,6 +812,48 @@ export function SimulatorSection({
                   ? currentRisk.action
                   : 'Presiona "Evaluar Riesgo en BigQuery ML" para obtener el protocolo recomendado para admisión.'}
               </p>
+            </div>
+
+            {/* Botones de acción en el panel sticky (accesibles sin scroll) */}
+            <div className="mt-3.5 flex flex-wrap items-center gap-2">
+              <button
+                type="submit"
+                form="sim-form-controls"
+                disabled={loadingPredict || loadingWhatIf}
+                className="inline-flex h-10 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-sky-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+              >
+                {loadingPredict && (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                )}
+                <span>
+                  {loadingPredict
+                    ? 'Consultando BigQuery ML…'
+                    : 'Evaluar Riesgo en BigQuery ML'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleWhatIf}
+                disabled={loadingPredict || loadingWhatIf}
+                className="inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+              >
+                {loadingWhatIf ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-sky-700" aria-hidden="true" />
+                ) : (
+                  <Sparkles className="h-4 w-4 text-sky-600" aria-hidden="true" />
+                )}
+                <span>¿Qué pasaría si…?</span>
+              </button>
+            </div>
+
+            <div className="mt-2 text-center lg:hidden">
+              <a
+                href="#sim-form-controls"
+                className="text-xs font-semibold text-sky-700 hover:underline"
+              >
+                Editar las 12 variables ↓
+              </a>
             </div>
 
             {/* Resumen visible de los 12 parámetros usados (clave en móvil y desktop) */}
