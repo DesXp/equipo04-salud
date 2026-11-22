@@ -79,6 +79,12 @@ export function TopBar({
           >
             ROI
           </a>
+          <a
+            href="#sec-gerencia"
+            className="shrink-0 whitespace-nowrap py-1 transition-colors hover:text-sky-700 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+          >
+            Post-Evento
+          </a>
         </nav>
 
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">

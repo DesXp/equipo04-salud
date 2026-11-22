@@ -7,6 +7,7 @@ import { HeatmapSection } from './components/HeatmapSection';
 import { CriticalAgendaSection } from './components/CriticalAgendaSection';
 import { SimulatorSection } from './components/SimulatorSection';
 import { RoiCalculatorSection } from './components/RoiCalculatorSection';
+import { ExecutivePostEventSection } from './components/ExecutivePostEventSection';
 import { FooterSection } from './components/FooterSection';
 import {
   CONFIG,
@@ -20,6 +21,7 @@ import {
 import type {
   AgendaRow,
   ChannelRow,
+  CitySummaryRow,
   ConnectionStatus,
   GovernanceRow,
   HeatmapRow,
@@ -27,6 +29,8 @@ import type {
   KpiSummaryRow,
   LeadRangeRow,
   ModelMetricsRow,
+  MonthlyTrendRow,
+  ParetoProfileRow,
   PriorNoShowRow,
   SimulatorFeatures,
   SpecialtyRow,
@@ -75,6 +79,11 @@ export default function App() {
   );
   const [metricsOffline, setMetricsOffline] = useState(false);
 
+  const [paretoProfiles, setParetoProfiles] = useState<ParetoProfileRow[]>([]);
+  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendRow[]>([]);
+  const [byCitySummary, setByCitySummary] = useState<CitySummaryRow[]>([]);
+  const [executiveOffline, setExecutiveOffline] = useState(false);
+
   const [simFeatures, setSimFeatures] = useState<SimulatorFeatures>(DEFAULT_FEATURES);
   const [preloadedFromAgenda, setPreloadedFromAgenda] = useState(false);
   const [evalTrigger, setEvalTrigger] = useState(0);
@@ -104,6 +113,9 @@ export default function App() {
       runQuery<HeatmapRow>(SQL_QUERIES.HEATMAP_CENTER_SPECIALTY),
       runQuery<AgendaRow>(SQL_QUERIES.CRITICAL_AGENDA),
       runQuery<ModelMetricsRow>(SQL_QUERIES.MODEL_METRICS),
+      runQuery<ParetoProfileRow>(SQL_QUERIES.PARETO_PROFILES),
+      runQuery<MonthlyTrendRow>(SQL_QUERIES.MONTHLY_TREND),
+      runQuery<CitySummaryRow>(SQL_QUERIES.BY_CITY_SUMMARY),
     ] as const;
 
     const settled = await Promise.allSettled(tasks);
@@ -125,6 +137,9 @@ export default function App() {
       heatRes,
       agendaRes,
       metricsRes,
+      paretoRes,
+      trendRes,
+      cityRes,
     ] = settled;
 
     // 0) Governance
@@ -237,9 +252,34 @@ export default function App() {
       });
       setMetricsOffline(false);
     } else {
-      setModelMetrics(FALLBACK_MODEL_METRICS);
+      setModelMetrics(OFFLINE_FALLBACK.modelMetrics);
       setMetricsOffline(true);
     }
+
+    // Executive Post-Event queries
+    setParetoProfiles(
+      paretoRes.status === 'fulfilled'
+        ? paretoRes.value
+        : OFFLINE_FALLBACK.paretoProfiles,
+    );
+    setMonthlyTrend(
+      trendRes.status === 'fulfilled'
+        ? trendRes.value
+        : OFFLINE_FALLBACK.monthlyTrend,
+    );
+    setByCitySummary(
+      cityRes.status === 'fulfilled'
+        ? cityRes.value
+        : OFFLINE_FALLBACK.byCitySummary,
+    );
+    setExecutiveOffline(
+      !(
+        metricsRes.status === 'fulfilled' &&
+        paretoRes.status === 'fulfilled' &&
+        trendRes.status === 'fulfilled' &&
+        cityRes.status === 'fulfilled'
+      ),
+    );
   }, []);
 
   useEffect(() => {
@@ -247,7 +287,7 @@ export default function App() {
   }, [loadDashboard]);
 
   const retrySection = async (
-    section: 'governance' | 'kpis' | 'b1' | 'b2' | 'b3' | 'b4',
+    section: 'governance' | 'kpis' | 'b1' | 'b2' | 'b3' | 'b4' | 'executive',
   ) => {
     setConnectionStatus('reconnecting');
     try {
@@ -293,6 +333,27 @@ export default function App() {
         const a = await runQuery<AgendaRow>(SQL_QUERIES.CRITICAL_AGENDA);
         setAgendaRows(a);
         setB4Offline(false);
+      } else if (section === 'executive') {
+        const [mRows, pRows, tRows, cRows] = await Promise.all([
+          runQuery<ModelMetricsRow>(SQL_QUERIES.MODEL_METRICS),
+          runQuery<ParetoProfileRow>(SQL_QUERIES.PARETO_PROFILES),
+          runQuery<MonthlyTrendRow>(SQL_QUERIES.MONTHLY_TREND),
+          runQuery<CitySummaryRow>(SQL_QUERIES.BY_CITY_SUMMARY),
+        ]);
+        if (mRows[0]) {
+          setModelMetrics({
+            precision: Number(mRows[0].precision ?? 0),
+            recall: Number(mRows[0].recall ?? CONFIG.RECALL),
+            accuracy: Number(mRows[0].accuracy ?? CONFIG.ACCURACY),
+            f1_score: Number(mRows[0].f1_score ?? 0),
+            roc_auc: Number(mRows[0].roc_auc ?? CONFIG.ROC_AUC),
+          });
+          setMetricsOffline(false);
+        }
+        setParetoProfiles(pRows);
+        setMonthlyTrend(tRows);
+        setByCitySummary(cRows);
+        setExecutiveOffline(false);
       }
       setConnectionStatus('live');
       markUpdatedTime();
@@ -448,6 +509,16 @@ export default function App() {
           noShowsTotales={noShowsTotales}
           mesesVentana={mesesVentana}
           modelRecall={modelMetrics.recall}
+        />
+
+        <ExecutivePostEventSection
+          modelMetrics={modelMetrics}
+          paretoProfiles={paretoProfiles}
+          monthlyTrend={monthlyTrend}
+          byCitySummary={byCitySummary}
+          loading={isRefreshing}
+          isOffline={executiveOffline}
+          onRetry={() => void retrySection('executive')}
         />
       </main>
 

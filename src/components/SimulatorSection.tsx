@@ -171,6 +171,10 @@ export function SimulatorSection({
         ...features,
         sms_confirmed: true,
       };
+      const featApp: SimulatorFeatures = {
+        ...features,
+        appointment_channel: 'APP_MOBILE',
+      };
       const feat7d: SimulatorFeatures = {
         ...features,
         lead_time_days: 7,
@@ -179,9 +183,10 @@ export function SimulatorSection({
       let baseVal = scorePct ?? 0;
 
       if (needsBase) {
-        const [resBase, resSms, res7d] = await Promise.all([
+        const [resBase, resSms, resApp, res7d] = await Promise.all([
           predictAppointmentRisk(features),
           predictAppointmentRisk(featSmsConfirmed),
+          predictAppointmentRisk(featApp),
           predictAppointmentRisk(feat7d),
         ]);
         baseVal = resBase.probPct;
@@ -191,16 +196,19 @@ export function SimulatorSection({
         setWhatIf({
           baseScore: baseVal,
           smsConfirmedScore: resSms.probPct,
+          appScore: resApp.probPct,
           lead7Score: res7d.probPct,
         });
       } else {
-        const [resSms, res7d] = await Promise.all([
+        const [resSms, resApp, res7d] = await Promise.all([
           predictAppointmentRisk(featSmsConfirmed),
+          predictAppointmentRisk(featApp),
           predictAppointmentRisk(feat7d),
         ]);
         setWhatIf({
           baseScore: baseVal,
           smsConfirmedScore: resSms.probPct,
+          appScore: resApp.probPct,
           lead7Score: res7d.probPct,
         });
       }
@@ -552,7 +560,7 @@ export function SimulatorSection({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  No confirmado (Riesgo)
+                  No confirmó SMS
                 </button>
                 <button
                   type="button"
@@ -717,7 +725,7 @@ export function SimulatorSection({
                 </div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 text-slate-700">
                   <span>
-                    (a) Si confirma <strong className="font-mono">SMS</strong>
+                    (1) Confirmar vía <strong className="font-mono">SMS</strong>
                   </span>
                   <span className="font-mono tabular-nums">
                     <strong className="text-slate-900">
@@ -734,8 +742,23 @@ export function SimulatorSection({
                     )
                   </span>
                 </div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 text-slate-700">
+                  <span>
+                    (2) Cambiar canal a <strong className="font-mono">APP_MOBILE</strong>
+                  </span>
+                  <span className="font-mono tabular-nums">
+                    <strong className="text-slate-900">
+                      {fmtDec1.format(whatIf.appScore)}%
+                    </strong>{' '}
+                    (
+                    <span className={deltaColor(whatIf.appScore - whatIf.baseScore)}>
+                      {formatDelta(whatIf.appScore - whatIf.baseScore)}
+                    </span>
+                    )
+                  </span>
+                </div>
                 <div className="flex items-center justify-between text-slate-700">
-                  <span>(b) Reducir anticipación a 7 días</span>
+                  <span>(3) Reducir anticipación a 7 días</span>
                   <span className="font-mono tabular-nums">
                     <strong className="text-slate-900">
                       {fmtDec1.format(whatIf.lead7Score)}%

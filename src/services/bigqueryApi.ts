@@ -1,11 +1,15 @@
 import type {
   AgendaRow,
   ChannelRow,
+  CitySummaryRow,
   GovernanceRow,
   HeatmapRow,
   InsuranceRow,
   KpiSummaryRow,
   LeadRangeRow,
+  ModelMetricsRow,
+  MonthlyTrendRow,
+  ParetoProfileRow,
   PredictionResult,
   PriorNoShowRow,
   SimulatorFeatures,
@@ -58,6 +62,10 @@ export const OFFLINE_FALLBACK: {
   byInsurance: InsuranceRow[];
   heatmap: HeatmapRow[];
   agenda: AgendaRow[];
+  modelMetrics: ModelMetricsRow;
+  paretoProfiles: ParetoProfileRow[];
+  monthlyTrend: MonthlyTrendRow[];
+  byCitySummary: CitySummaryRow[];
 } = {
   governance: {
     total: 75000,
@@ -157,6 +165,37 @@ export const OFFLINE_FALLBACK: {
       capacity_daily: 110,
       sms_confirmed: false,
     },
+  ],
+  modelMetrics: {
+    precision: 0.614,
+    recall: 0.6456,
+    accuracy: 0.8624,
+    f1_score: 0.6294,
+    roc_auc: 0.7829,
+  },
+  paretoProfiles: [
+    { sms_status: 'Sin confirmar SMS', prior_group: 'Reincidente (>=1 falta)', lead_group: '31–60 días', total: 9800, no_shows: 3920, no_show_rate: 0.4 },
+    { sms_status: 'Sin confirmar SMS', prior_group: 'Reincidente (>=1 falta)', lead_group: '16–30 días', total: 5400, no_shows: 1728, no_show_rate: 0.32 },
+    { sms_status: 'Sin confirmar SMS', prior_group: 'Sin faltas (0)', lead_group: '31–60 días', total: 11200, no_shows: 2464, no_show_rate: 0.22 },
+    { sms_status: 'Sin confirmar SMS', prior_group: 'Reincidente (>=1 falta)', lead_group: '0–15 días', total: 4200, no_shows: 882, no_show_rate: 0.21 },
+    { sms_status: 'SMS Confirmado', prior_group: 'Reincidente (>=1 falta)', lead_group: '31–60 días', total: 6800, no_shows: 1088, no_show_rate: 0.16 },
+    { sms_status: 'Sin confirmar SMS', prior_group: 'Sin faltas (0)', lead_group: '16–30 días', total: 8900, no_shows: 1246, no_show_rate: 0.14 },
+    { sms_status: 'SMS Confirmado', prior_group: 'Sin faltas (0)', lead_group: '0–15 días', total: 14500, no_shows: 870, no_show_rate: 0.06 },
+  ],
+  monthlyTrend: [
+    { month_ym: '2024-01', total: 6150, no_shows: 1150, no_show_rate: 0.187, unconfirmed_sms_rate: 0.48 },
+    { month_ym: '2024-02', total: 5980, no_shows: 1088, no_show_rate: 0.182, unconfirmed_sms_rate: 0.46 },
+    { month_ym: '2024-03', total: 6320, no_shows: 1169, no_show_rate: 0.185, unconfirmed_sms_rate: 0.47 },
+    { month_ym: '2024-04', total: 6200, no_shows: 1104, no_show_rate: 0.178, unconfirmed_sms_rate: 0.45 },
+    { month_ym: '2024-05', total: 6410, no_shows: 1154, no_show_rate: 0.18, unconfirmed_sms_rate: 0.46 },
+    { month_ym: '2024-06', total: 6290, no_shows: 1113, no_show_rate: 0.177, unconfirmed_sms_rate: 0.44 },
+  ],
+  byCitySummary: [
+    { center_city: 'Lima', total: 31500, no_shows: 5922, no_show_rate: 0.188, centers_count: 4 },
+    { center_city: 'Arequipa', total: 13200, no_shows: 2389, no_show_rate: 0.181, centers_count: 2 },
+    { center_city: 'Trujillo', total: 11400, no_shows: 2041, no_show_rate: 0.179, centers_count: 2 },
+    { center_city: 'Piura', total: 10100, no_shows: 1757, no_show_rate: 0.174, centers_count: 2 },
+    { center_city: 'Cusco', total: 8800, no_shows: 1443, no_show_rate: 0.164, centers_count: 1 },
   ],
 };
 
@@ -278,6 +317,41 @@ LIMIT 12`,
 
   MODEL_METRICS: `SELECT precision, recall, accuracy, f1_score, roc_auc
 FROM ML.EVALUATE(MODEL \`datathon-dsc-uni.curated_equipo04.health_noshow_classifier\`)`,
+
+  PARETO_PROFILES: `SELECT
+  IF(COALESCE(sms_confirmed, FALSE), 'SMS Confirmado', 'Sin confirmar SMS') AS sms_status,
+  IF(prior_no_shows >= 1, 'Reincidente (>=1 falta)', 'Sin faltas (0)') AS prior_group,
+  CASE
+    WHEN lead_time_days <= 15 THEN '0–15 días'
+    WHEN lead_time_days <= 30 THEN '16–30 días'
+    ELSE '31–60 días'
+  END AS lead_group,
+  COUNT(*) AS total,
+  COUNTIF(no_show_label = 1) AS no_shows,
+  SAFE_DIVIDE(COUNTIF(no_show_label = 1), COUNT(*)) AS no_show_rate
+FROM ${TABLE_FQN}
+GROUP BY sms_status, prior_group, lead_group
+ORDER BY no_show_rate DESC`,
+
+  MONTHLY_TREND: `SELECT
+  FORMAT_DATE('%Y-%m', appointment_date) AS month_ym,
+  COUNT(*) AS total,
+  COUNTIF(no_show_label = 1) AS no_shows,
+  SAFE_DIVIDE(COUNTIF(no_show_label = 1), COUNT(*)) AS no_show_rate,
+  SAFE_DIVIDE(COUNTIF(NOT COALESCE(sms_confirmed, FALSE)), COUNT(*)) AS unconfirmed_sms_rate
+FROM ${TABLE_FQN}
+GROUP BY month_ym
+ORDER BY month_ym ASC`,
+
+  BY_CITY_SUMMARY: `SELECT
+  center_city,
+  COUNT(*) AS total,
+  COUNTIF(no_show_label = 1) AS no_shows,
+  SAFE_DIVIDE(COUNTIF(no_show_label = 1), COUNT(*)) AS no_show_rate,
+  COUNT(DISTINCT center_name) AS centers_count
+FROM ${TABLE_FQN}
+GROUP BY center_city
+ORDER BY no_shows DESC`,
 } as const;
 
 export const fmtInt = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 });
@@ -423,7 +497,17 @@ export async function predictAppointmentRisk(features: SimulatorFeatures): Promi
     model_name: 'health_noshow_classifier',
     dataset: 'curated_equipo04',
     features: {
-      ...features,
+      lead_time_days: Number(features.lead_time_days),
+      appointment_channel: String(features.appointment_channel),
+      systolic_bp: Number(features.systolic_bp),
+      prior_no_shows: Number(features.prior_no_shows),
+      age: Number(features.age),
+      gender: String(features.gender),
+      insurance_type: String(features.insurance_type),
+      chronic_conditions: Number(features.chronic_conditions),
+      specialty: String(features.specialty),
+      capacity_daily: Number(features.capacity_daily),
+      center_city: String(features.center_city),
       sms_confirmed: Boolean(features.sms_confirmed),
     },
   });

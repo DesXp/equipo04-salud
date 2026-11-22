@@ -127,7 +127,33 @@ export interface SimHistoryItem {
 export interface WhatIfResult {
   baseScore: number;
   smsConfirmedScore: number;
+  appScore: number;
   lead7Score: number;
+}
+
+export interface ParetoProfileRow {
+  sms_status: string;
+  prior_group: string;
+  lead_group: string;
+  total: number;
+  no_shows: number;
+  no_show_rate: number;
+}
+
+export interface MonthlyTrendRow {
+  month_ym: string;
+  total: number;
+  no_shows: number;
+  no_show_rate: number;
+  unconfirmed_sms_rate: number;
+}
+
+export interface CitySummaryRow {
+  center_city: string;
+  total: number;
+  no_shows: number;
+  no_show_rate: number;
+  centers_count: number;
 }
 
 export interface SectionStatus {

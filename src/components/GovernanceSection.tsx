@@ -76,7 +76,7 @@ export function GovernanceSection({
                 Conectando con BigQuery (Cloud Run puede tardar unos segundos en despertar)…
               </p>
               <p className="text-xs text-sky-800">
-                Ejecutando 10 consultas paralelas agregadas sobre{' '}
+                Ejecutando 13 consultas paralelas agregadas sobre{' '}
                 <code className="font-mono text-[11px]">curated_equipo04.curated_appointments_gold</code> y{' '}
                 <code className="font-mono text-[11px]">ML.EVALUATE</code>.
               </p>
