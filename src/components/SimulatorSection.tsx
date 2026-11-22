@@ -287,299 +287,374 @@ export function SimulatorSection({
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* FORMULARIO DE 12 VARIABLES */}
-        <form onSubmit={handleSubmit} className="space-y-5 lg:col-span-7">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* lead_time_days */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <label htmlFor="f-lead_time_days">Días de anticipación</label>
-                <span className="font-mono font-bold text-sky-700 tabular-nums">
-                  {features.lead_time_days} d
-                </span>
-              </div>
-              <input
-                id="f-lead_time_days"
-                type="range"
-                min={0}
-                max={60}
-                step={1}
-                value={features.lead_time_days}
-                onChange={(e) => updateField('lead_time_days', Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer"
-              />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
-                <span>0 d</span>
-                <span>60 d</span>
+        {/* FORMULARIO DE 12 VARIABLES SEGMENTADO POR RELEVANCIA (ML.WEIGHTS) */}
+        <form onSubmit={handleSubmit} className="space-y-4 lg:col-span-7">
+          {/* BLOQUE 1 — Factores Determinantes de Riesgo (~88%) */}
+          <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50/40 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2">
+              <h3 className="text-xs font-bold text-amber-950">
+                Nivel 1: Factores Críticos de Contacto e Historial (~88% del peso en BQML)
+              </h3>
+              <span className="font-mono text-[11px] font-bold text-red-700">
+                Determinantes principales
+              </span>
+            </div>
+
+            {/* 1. sms_confirmed */}
+            <div className="rounded-lg border border-amber-200 bg-white p-3.5">
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-slate-900">
+                    Confirmación SMS Previa
+                  </p>
+                  <span className="inline-block rounded border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-800">
+                    Impacto Crítico #1 · ~52% aporte (Sin SMS: 39.3% No-Show vs Con SMS: 8.0%)
+                  </span>
+                </div>
+                <div
+                  role="group"
+                  aria-label="Confirmación SMS Previa"
+                  className="grid shrink-0 grid-cols-2 gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-1"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={!features.sms_confirmed}
+                    onClick={() => updateField('sms_confirmed', false)}
+                    className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                      !features.sms_confirmed
+                        ? 'bg-amber-100 text-amber-950 ring-1 ring-amber-400'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    No confirmó SMS
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={features.sms_confirmed}
+                    onClick={() => updateField('sms_confirmed', true)}
+                    className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                      features.sms_confirmed
+                        ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-300'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Sí confirmó SMS
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* prior_no_shows */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <label htmlFor="f-prior_no_shows">Faltas previas</label>
-                <span className="font-mono font-bold text-sky-700 tabular-nums">
-                  {features.prior_no_shows}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* 2. prior_no_shows */}
+              <div className="rounded-lg border border-amber-200 bg-white p-3.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
+                  <label htmlFor="f-prior_no_shows">Faltas previas</label>
+                  <span className="font-mono font-bold text-amber-800 tabular-nums">
+                    {features.prior_no_shows}
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-900">
+                  Impacto Crítico #2 · ~21% aporte (Peso BQML: +0.0251 | Escalón &gt;=1 falta)
                 </span>
+                <input
+                  id="f-prior_no_shows"
+                  type="range"
+                  min={0}
+                  max={4}
+                  step={1}
+                  value={features.prior_no_shows}
+                  onChange={(e) => updateField('prior_no_shows', Number(e.target.value))}
+                  className="mt-2.5 w-full cursor-pointer"
+                />
+                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                  <span>0</span>
+                  <span>4</span>
+                </div>
               </div>
-              <input
-                id="f-prior_no_shows"
-                type="range"
-                min={0}
-                max={4}
-                step={1}
-                value={features.prior_no_shows}
-                onChange={(e) => updateField('prior_no_shows', Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer"
-              />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
-                <span>0</span>
-                <span>4</span>
-              </div>
-            </div>
 
-            {/* systolic_bp */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <label htmlFor="f-systolic_bp">Presión sistólica</label>
-                <span className="font-mono font-bold text-sky-700 tabular-nums">
-                  {features.systolic_bp} mmHg
+              {/* 3. lead_time_days */}
+              <div className="rounded-lg border border-amber-200 bg-white p-3.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
+                  <label htmlFor="f-lead_time_days">Días de anticipación</label>
+                  <span className="font-mono font-bold text-amber-800 tabular-nums">
+                    {features.lead_time_days} d
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-900">
+                  Impacto Crítico #3 · ~15% aporte (Peso BQML: +0.0033/d | Quiebre &gt;15d y &gt;30d)
                 </span>
-              </div>
-              <input
-                id="f-systolic_bp"
-                type="range"
-                min={95}
-                max={175}
-                step={1}
-                value={features.systolic_bp}
-                onChange={(e) => updateField('systolic_bp', Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer"
-              />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
-                <span>95</span>
-                <span>175</span>
-              </div>
-            </div>
-
-            {/* chronic_conditions */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <label htmlFor="f-chronic_conditions">Condiciones crónicas</label>
-                <span className="font-mono font-bold text-sky-700 tabular-nums">
-                  {features.chronic_conditions}
-                </span>
-              </div>
-              <input
-                id="f-chronic_conditions"
-                type="range"
-                min={0}
-                max={5}
-                step={1}
-                value={features.chronic_conditions}
-                onChange={(e) =>
-                  updateField('chronic_conditions', Number(e.target.value))
-                }
-                className="mt-2 w-full cursor-pointer"
-              />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
-                <span>0</span>
-                <span>5</span>
-              </div>
-            </div>
-
-            {/* age */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <label htmlFor="f-age">Edad del paciente</label>
-                <span className="font-mono font-bold text-sky-700 tabular-nums">
-                  {features.age} años
-                </span>
-              </div>
-              <input
-                id="f-age"
-                type="range"
-                min={minAge}
-                max={maxAge}
-                step={1}
-                value={features.age}
-                onChange={(e) => updateField('age', Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer"
-              />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
-                <span>{minAge}</span>
-                <span>{maxAge}</span>
-              </div>
-            </div>
-
-            {/* capacity_daily */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <label htmlFor="f-capacity_daily">Capacidad diaria sede</label>
-                <span className="font-mono font-bold text-sky-700 tabular-nums">
-                  {features.capacity_daily}
-                </span>
-              </div>
-              <input
-                id="f-capacity_daily"
-                type="range"
-                min={minCapacity}
-                max={maxCapacity}
-                step={1}
-                value={features.capacity_daily}
-                onChange={(e) => updateField('capacity_daily', Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer"
-              />
-              <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
-                <span>{minCapacity}</span>
-                <span>{maxCapacity}</span>
+                <input
+                  id="f-lead_time_days"
+                  type="range"
+                  min={0}
+                  max={60}
+                  step={1}
+                  value={features.lead_time_days}
+                  onChange={(e) => updateField('lead_time_days', Number(e.target.value))}
+                  className="mt-2.5 w-full cursor-pointer"
+                />
+                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                  <span>0 d</span>
+                  <span>60 d</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 5 Selects categóricos */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label
-                htmlFor="f-appointment_channel"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Canal de reserva
-              </label>
-              <select
-                id="f-appointment_channel"
-                value={features.appointment_channel}
-                onChange={(e) => updateField('appointment_channel', e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
-              >
-                <option value="CALL_CENTER">CALL_CENTER</option>
-                <option value="WALK_IN">WALK_IN</option>
-                <option value="WEB">WEB</option>
-                <option value="APP_MOBILE">APP_MOBILE</option>
-              </select>
+          {/* BLOQUE 2 — Factores Operativos de Sede, Canal y Cobertura (~9%) */}
+          <div className="space-y-3 rounded-xl border border-sky-200 bg-sky-50/30 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/70 pb-2">
+              <h3 className="text-xs font-bold text-sky-950">
+                Nivel 2: Contexto Operativo de Reserva y Sede (~9% del peso en BQML)
+              </h3>
+              <span className="font-mono text-[11px] font-semibold text-sky-800">
+                Peso operativo
+              </span>
             </div>
 
-            <div>
-              <label
-                htmlFor="f-specialty"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Especialidad
-              </label>
-              <select
-                id="f-specialty"
-                value={features.specialty}
-                onChange={(e) => updateField('specialty', e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
-              >
-                <option value="TRAUMA">TRAUMA</option>
-                <option value="CARDIOLOGY">CARDIOLOGY</option>
-                <option value="GENERAL">GENERAL</option>
-                <option value="ONCOLOGY">ONCOLOGY</option>
-                <option value="PEDIATRICS">PEDIATRICS</option>
-              </select>
-            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* 4. center_city */}
+              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
+                <label
+                  htmlFor="f-center_city"
+                  className="block text-xs font-semibold text-slate-800"
+                >
+                  Ciudad de la sede
+                </label>
+                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
+                  Moderado · ~3.2% (Cusco -0.0055 vs Trujillo +0.0010)
+                </span>
+                <select
+                  id="f-center_city"
+                  value={features.center_city}
+                  onChange={(e) => updateField('center_city', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                >
+                  <option value="Lima">Lima</option>
+                  <option value="Arequipa">Arequipa</option>
+                  <option value="Trujillo">Trujillo</option>
+                  <option value="Cusco">Cusco</option>
+                  <option value="Piura">Piura</option>
+                </select>
+              </div>
 
-            <div>
-              <label
-                htmlFor="f-center_city"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Ciudad de la sede
-              </label>
-              <select
-                id="f-center_city"
-                value={features.center_city}
-                onChange={(e) => updateField('center_city', e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
-              >
-                <option value="Lima">Lima</option>
-                <option value="Arequipa">Arequipa</option>
-                <option value="Trujillo">Trujillo</option>
-                <option value="Cusco">Cusco</option>
-                <option value="Piura">Piura</option>
-              </select>
-            </div>
+              {/* 5. specialty */}
+              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
+                <label
+                  htmlFor="f-specialty"
+                  className="block text-xs font-semibold text-slate-800"
+                >
+                  Especialidad
+                </label>
+                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
+                  Moderado · ~2.5% (Trauma +0.0043 vs Pediatría -0.0026)
+                </span>
+                <select
+                  id="f-specialty"
+                  value={features.specialty}
+                  onChange={(e) => updateField('specialty', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                >
+                  <option value="TRAUMA">TRAUMA</option>
+                  <option value="CARDIOLOGY">CARDIOLOGY</option>
+                  <option value="GENERAL">GENERAL</option>
+                  <option value="ONCOLOGY">ONCOLOGY</option>
+                  <option value="PEDIATRICS">PEDIATRICS</option>
+                </select>
+              </div>
 
-            <div>
-              <label
-                htmlFor="f-insurance_type"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Tipo de seguro
-              </label>
-              <select
-                id="f-insurance_type"
-                value={features.insurance_type}
-                onChange={(e) => updateField('insurance_type', e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
-              >
-                <option value="PUBLIC_SIS">PUBLIC_SIS</option>
-                <option value="ESSALUD">ESSALUD</option>
-                <option value="SELF_PAY">SELF_PAY</option>
-                <option value="PRIVATE_EPS">PRIVATE_EPS</option>
-              </select>
-            </div>
+              {/* 6. appointment_channel */}
+              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
+                <label
+                  htmlFor="f-appointment_channel"
+                  className="block text-xs font-semibold text-slate-800"
+                >
+                  Canal de reserva
+                </label>
+                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
+                  Moderado · ~2.0% (Walk-In +0.0023 vs App -0.0041)
+                </span>
+                <select
+                  id="f-appointment_channel"
+                  value={features.appointment_channel}
+                  onChange={(e) => updateField('appointment_channel', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                >
+                  <option value="CALL_CENTER">CALL_CENTER</option>
+                  <option value="WALK_IN">WALK_IN</option>
+                  <option value="WEB">WEB</option>
+                  <option value="APP_MOBILE">APP_MOBILE</option>
+                </select>
+              </div>
 
-            <div>
-              <label
-                htmlFor="f-gender"
-                className="mb-1 block text-xs font-semibold text-slate-700"
-              >
-                Sexo
-              </label>
-              <select
-                id="f-gender"
-                value={features.gender}
-                onChange={(e) => updateField('gender', e.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
-              >
-                <option value="F">F (Femenino)</option>
-                <option value="M">M (Masculino)</option>
-              </select>
+              {/* 7. insurance_type */}
+              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
+                <label
+                  htmlFor="f-insurance_type"
+                  className="block text-xs font-semibold text-slate-800"
+                >
+                  Tipo de seguro
+                </label>
+                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
+                  Moderado · ~1.3% (SIS +0.0009 vs EPS -0.0026)
+                </span>
+                <select
+                  id="f-insurance_type"
+                  value={features.insurance_type}
+                  onChange={(e) => updateField('insurance_type', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                >
+                  <option value="PUBLIC_SIS">PUBLIC_SIS</option>
+                  <option value="ESSALUD">ESSALUD</option>
+                  <option value="SELF_PAY">SELF_PAY</option>
+                  <option value="PRIVATE_EPS">PRIVATE_EPS</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Confirmación SMS Previa (sms_confirmed) */}
-          <div className="rounded-lg border border-sky-200 bg-sky-50/50 p-3.5">
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-900">
-                  Confirmación SMS Previa
-                </p>
-                <p className="text-[11px] text-slate-600">
-                  Variable de contacto directo (<code className="font-mono">sms_confirmed</code>)
-                </p>
+          {/* BLOQUE 3 — Variables Clínicas de Triaje JSON y Demografía (~3%) */}
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <h3 className="text-xs font-bold text-slate-800">
+                Nivel 3: Variables Clínicas de Triaje y Demografía (~3% de ajuste fino en BQML)
+              </h3>
+              <span className="font-mono text-[11px] font-medium text-slate-500">
+                Ajuste fino
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* 8. chronic_conditions */}
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <label htmlFor="f-chronic_conditions">Condiciones crónicas</label>
+                  <span className="font-mono font-bold text-sky-700 tabular-nums">
+                    {features.chronic_conditions}
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
+                  Ajuste Clínico · ~1.2% (+0.0012/condición)
+                </span>
+                <input
+                  id="f-chronic_conditions"
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={1}
+                  value={features.chronic_conditions}
+                  onChange={(e) =>
+                    updateField('chronic_conditions', Number(e.target.value))
+                  }
+                  className="mt-2 w-full cursor-pointer"
+                />
+                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                  <span>0</span>
+                  <span>5</span>
+                </div>
               </div>
-              <div
-                role="group"
-                aria-label="Confirmación SMS Previa"
-                className="grid grid-cols-2 gap-1.5 rounded-lg border border-slate-200 bg-white p-1"
-              >
-                <button
-                  type="button"
-                  aria-pressed={!features.sms_confirmed}
-                  onClick={() => updateField('sms_confirmed', false)}
-                  className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
-                    !features.sms_confirmed
-                      ? 'bg-amber-50 text-amber-900 ring-1 ring-amber-300'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+
+              {/* 9. gender */}
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <label
+                  htmlFor="f-gender"
+                  className="block text-xs font-semibold text-slate-700"
                 >
-                  No confirmó SMS
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={features.sms_confirmed}
-                  onClick={() => updateField('sms_confirmed', true)}
-                  className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
-                    features.sms_confirmed
-                      ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-300'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  Sexo
+                </label>
+                <span className="mt-1 mb-2 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
+                  Ajuste Demográfico · ~0.8% (F +0.0008 vs M -0.0015)
+                </span>
+                <select
+                  id="f-gender"
+                  value={features.gender}
+                  onChange={(e) => updateField('gender', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
                 >
-                  Sí confirmó SMS
-                </button>
+                  <option value="F">F (Femenino)</option>
+                  <option value="M">M (Masculino)</option>
+                </select>
+              </div>
+
+              {/* 10. systolic_bp */}
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <label htmlFor="f-systolic_bp">Presión sistólica</label>
+                  <span className="font-mono font-bold text-sky-700 tabular-nums">
+                    {features.systolic_bp} mmHg
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
+                  Ajuste Triaje JSON · ~0.5% (-0.00009/mmHg)
+                </span>
+                <input
+                  id="f-systolic_bp"
+                  type="range"
+                  min={95}
+                  max={175}
+                  step={1}
+                  value={features.systolic_bp}
+                  onChange={(e) => updateField('systolic_bp', Number(e.target.value))}
+                  className="mt-2 w-full cursor-pointer"
+                />
+                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                  <span>95</span>
+                  <span>175</span>
+                </div>
+              </div>
+
+              {/* 11. age */}
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <label htmlFor="f-age">Edad del paciente</label>
+                  <span className="font-mono font-bold text-sky-700 tabular-nums">
+                    {features.age} años
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
+                  Ajuste Demográfico · ~0.3% (-0.00001/año)
+                </span>
+                <input
+                  id="f-age"
+                  type="range"
+                  min={minAge}
+                  max={maxAge}
+                  step={1}
+                  value={features.age}
+                  onChange={(e) => updateField('age', Number(e.target.value))}
+                  className="mt-2 w-full cursor-pointer"
+                />
+                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                  <span>{minAge}</span>
+                  <span>{maxAge}</span>
+                </div>
+              </div>
+
+              {/* 12. capacity_daily */}
+              <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <label htmlFor="f-capacity_daily">Capacidad diaria sede</label>
+                  <span className="font-mono font-bold text-sky-700 tabular-nums">
+                    {features.capacity_daily}
+                  </span>
+                </div>
+                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
+                  Ajuste Sede · ~0.2% (-0.00001/cupo)
+                </span>
+                <input
+                  id="f-capacity_daily"
+                  type="range"
+                  min={minCapacity}
+                  max={maxCapacity}
+                  step={1}
+                  value={features.capacity_daily}
+                  onChange={(e) => updateField('capacity_daily', Number(e.target.value))}
+                  className="mt-2 w-full cursor-pointer"
+                />
+                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                  <span>{minCapacity}</span>
+                  <span>{maxCapacity}</span>
+                </div>
               </div>
             </div>
           </div>
