@@ -14,6 +14,7 @@ import type {
 import {
   fmtDec1,
   fmtDec2,
+  getClinicalBusinessAction,
   getRiskLevel,
   predictAppointmentRisk,
 } from '../services/bigqueryApi';
@@ -255,6 +256,10 @@ export function SimulatorSection({
   };
 
   const currentRisk = scorePct !== null ? getRiskLevel(scorePct) : null;
+  const currentBusinessAction =
+    scorePct !== null
+      ? getClinicalBusinessAction(scorePct, lastEvaluatedFeatures ?? features)
+      : null;
 
   const formatDelta = (delta: number) => {
     const sign = delta >= 0 ? '+' : '−';
@@ -707,6 +712,36 @@ export function SimulatorSection({
               </div>
             </div>
           </details>
+
+          {/* Reglas y Límites de Intervención */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs text-slate-700">
+            <p className="font-bold text-slate-900">
+              Reglas y Límites de Intervención
+            </p>
+            <ul className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-600">
+              <li>
+                <strong className="font-semibold text-slate-800">
+                  Particulares / EPS (<span className="font-mono">SELF_PAY</span>,{' '}
+                  <span className="font-mono">PRIVATE_EPS</span> · Riesgo ≥ 70%):
+                </strong>{' '}
+                Aplica pre-pago o depósito reembolsable (S/ 20–30 descontables) vía Web/App + WhatsApp 48 h.
+              </li>
+              <li>
+                <strong className="font-semibold text-slate-800">
+                  Normativa Pública (<span className="font-mono">PUBLIC_SIS</span>,{' '}
+                  <span className="font-mono">ESSALUD</span> · Riesgo ≥ 70%):
+                </strong>{' '}
+                Prohibido cobro previo; se aplica tope de reserva ≤ 15 días en reincidentes + auto-liberación en 24 h sin SMS.
+              </li>
+              <li>
+                <strong className="font-semibold text-slate-800">
+                  Límite Ético / Clínico (<span className="font-mono">ONCOLOGY</span>,{' '}
+                  <span className="font-mono">CARDIOLOGY</span> · Riesgo ≥ 50%):
+                </strong>{' '}
+                Nunca bloquear ni cobrar depósito; prioridad de seguimiento humano (llamada 48 h antes).
+              </li>
+            </ul>
+          </div>
         </form>
 
         {/* PANEL DE RESULTADO Y PROTOCOLO (Sticky en Desktop, Primero en Mobile) */}
@@ -800,16 +835,23 @@ export function SimulatorSection({
                   : 'border-slate-200 bg-white'
               }`}
             >
-              <p className="text-[11px] font-semibold text-slate-500">
-                Acción clínica recomendada
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <p className="text-[11px] font-semibold text-slate-500">
+                  Acción clínica recomendada
+                </p>
+                {currentBusinessAction && (
+                  <span className="font-mono text-[10px] font-bold text-slate-700">
+                    {currentBusinessAction.ruleTitle}
+                  </span>
+                )}
+              </div>
               <p
                 className={`mt-1 text-xs font-semibold leading-relaxed sm:text-sm ${
                   currentRisk ? currentRisk.textCls : 'text-slate-700'
                 }`}
               >
-                {currentRisk
-                  ? currentRisk.action
+                {currentBusinessAction
+                  ? currentBusinessAction.action
                   : 'Presiona "Evaluar Riesgo en BigQuery ML" para obtener el protocolo recomendado para admisión.'}
               </p>
             </div>

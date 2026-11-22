@@ -36,6 +36,20 @@ export function RoiCalculatorSection({
   const beneficioNetoMes = solesMes - costoRecordatoriosMes;
   const beneficioNetoAnio = beneficioNetoMes * 12;
 
+  const recoveryTier =
+    recoveryPct <= 25
+      ? 'basic'
+      : recoveryPct <= 45
+        ? 'recommended'
+        : 'integral';
+
+  const activeLeverText =
+    recoveryTier === 'basic'
+      ? 'Nivel Básico: Solo recordatorio automático SMS/WhatsApp 48 h antes.'
+      : recoveryTier === 'recommended'
+        ? 'Nivel Recomendado (Base 40%): WhatsApp + auto-liberación de cupo en 24 h + tope de 15 días a reincidentes.'
+        : 'Nivel Integral: Combo completo (Pre-pago en particulares/EPS + tope 15 días en SIS/EsSalud + sobrecupo controlado).';
+
   return (
     <section
       id="sec-roi"
@@ -54,9 +68,6 @@ export function RoiCalculatorSection({
             Impacto financiero y operativo mensual proyectado al intervenir
             proactivamente las citas detectadas por el modelo (Recall{' '}
             {fmtDec2.format(modelRecall * 100)}%).
-          </p>
-          <p className="mt-1 text-[11px] font-medium text-slate-500">
-            Supuestos: 0.5 h/cita · S/ 120/cita · Costo recordatorio: S/ 0.15/cita detectada
           </p>
         </div>
 
@@ -134,6 +145,91 @@ export function RoiCalculatorSection({
           <p className="mt-1 text-xs text-slate-600">
             Turnos de 8 h/mes reasignables
           </p>
+        </div>
+      </div>
+
+      {/* Supuestos y Palancas de Recuperación */}
+      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+        <div className="flex flex-col gap-1 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-sm font-bold text-slate-900">
+            Supuestos y Palancas de Recuperación
+          </h3>
+          <span className="font-mono text-xs font-semibold text-emerald-700 tabular-nums">
+            Escenario seleccionado: {recoveryPct}% de recuperación
+          </span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+            <p className="font-mono text-xs font-bold text-slate-900">
+              0.5 h/cita
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Duración estándar de consulta ambulatoria (30 min de médico y
+              consultorio).
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+            <p className="font-mono text-xs font-bold text-slate-900">
+              S/ 120/cita
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Costo de oportunidad promedio por turno perdido (consulta +
+              capacidad ociosa).
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+            <p className="font-mono text-xs font-bold text-slate-900">
+              S/ 0.15/cita
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Costo unitario de mensajería automatizada (WhatsApp/SMS) aplicada
+              al total de ausencias detectadas por el modelo (Recall).
+            </p>
+          </div>
+        </div>
+
+        {/* Palanca operativa activa */}
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-800">
+            Palanca operativa requerida para lograr {recoveryPct}% de recuperación
+          </p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-emerald-950 sm:text-sm">
+            {activeLeverText}
+          </p>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 text-[11px] md:grid-cols-3">
+          <div
+            className={`rounded-lg border p-2.5 transition-colors ${
+              recoveryTier === 'basic'
+                ? 'border-emerald-400 bg-emerald-50/60 font-semibold text-slate-900'
+                : 'border-slate-200 bg-white text-slate-600'
+            }`}
+          >
+            <span className="font-mono font-bold text-slate-800">10% – 25%:</span>{' '}
+            Nivel Básico — Solo recordatorio automático SMS/WhatsApp 48 h antes.
+          </div>
+          <div
+            className={`rounded-lg border p-2.5 transition-colors ${
+              recoveryTier === 'recommended'
+                ? 'border-emerald-400 bg-emerald-50/60 font-semibold text-slate-900'
+                : 'border-slate-200 bg-white text-slate-600'
+            }`}
+          >
+            <span className="font-mono font-bold text-slate-800">26% – 45%:</span>{' '}
+            Nivel Recomendado (Base 40%) — WhatsApp + auto-liberación 24 h + tope 15 días.
+          </div>
+          <div
+            className={`rounded-lg border p-2.5 transition-colors ${
+              recoveryTier === 'integral'
+                ? 'border-emerald-400 bg-emerald-50/60 font-semibold text-slate-900'
+                : 'border-slate-200 bg-white text-slate-600'
+            }`}
+          >
+            <span className="font-mono font-bold text-slate-800">46% – 60%:</span>{' '}
+            Nivel Integral — Pre-pago particulares/EPS + tope 15 días SIS/EsSalud + sobrecupo controlado.
+          </div>
         </div>
       </div>
 

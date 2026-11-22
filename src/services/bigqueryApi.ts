@@ -621,6 +621,56 @@ export function getRiskLevel(scorePct: number): RiskDescriptor {
     badgeCls: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     cardCls: 'border-emerald-200 bg-emerald-50/70',
     textCls: 'text-emerald-900',
-    action: 'Cita estable — confirmación estándar',
+    action: 'Cita estable — confirmación estándar sin fricción adicional.',
+  };
+}
+
+export interface ClinicalBusinessAction {
+  ruleTitle: string;
+  action: string;
+}
+
+export function getClinicalBusinessAction(
+  scorePct: number,
+  features: SimulatorFeatures,
+): ClinicalBusinessAction {
+  const isClinicalProtected =
+    features.specialty === 'ONCOLOGY' || features.specialty === 'CARDIOLOGY';
+
+  if (scorePct >= CONFIG.RISK_MEDIUM && isClinicalProtected) {
+    return {
+      ruleTitle: `Límite Ético / Clínico (${features.specialty})`,
+      action:
+        'Prioridad clínica: NO bloquear ni cobrar depósito. Realizar seguimiento humano personalizado (llamada de enfermería/admisión 48 h antes) para asegurar continuidad del tratamiento.',
+    };
+  }
+
+  if (scorePct >= CONFIG.RISK_HIGH) {
+    if (features.insurance_type === 'SELF_PAY' || features.insurance_type === 'PRIVATE_EPS') {
+      return {
+        ruleTitle: `Riesgo Alto · ${features.insurance_type}`,
+        action:
+          'Fricción positiva en reserva: Exigir pre-pago o depósito reembolsable (S/ 20–30 descontables de la consulta) al agendar vía Web/App + recordatorio WhatsApp 48 h.',
+      };
+    }
+
+    return {
+      ruleTitle: `Riesgo Alto · Normativa Pública (${features.insurance_type})`,
+      action:
+        'Normativa pública (prohibido cobro previo): Aplicar tope de ventana de reserva <= 15 días para reincidentes (reduce riesgo de 67.7% a ~8.1%) + auto-liberación de cupo en 24 h si no confirma SMS.',
+    };
+  }
+
+  if (scorePct >= CONFIG.RISK_MEDIUM) {
+    return {
+      ruleTitle: 'Riesgo Medio · Confirmación Activa',
+      action:
+        'Confirmación automática WhatsApp/SMS 48 h y 24 h antes con botón de cancelación en 1 clic para reasignar el turno a lista de espera.',
+    };
+  }
+
+  return {
+    ruleTitle: 'Riesgo Bajo · Flujo Estándar',
+    action: 'Cita estable — confirmación estándar sin fricción adicional.',
   };
 }
