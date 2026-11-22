@@ -115,6 +115,7 @@ export interface ModelMetricsRow {
 export interface PredictionResult {
   probPct: number;
   predClass: string | null;
+  isFallback?: boolean;
 }
 
 export interface SimHistoryItem {
@@ -160,4 +161,22 @@ export interface SectionStatus {
   loading: boolean;
   isOffline: boolean;
   errorMsg?: string;
+}
+
+export interface BigQuerySnapshot {
+  exportedAt: string;
+  connectionStatus: ConnectionStatus;
+  governance: GovernanceRow | null;
+  kpi: KpiSummaryRow | null;
+  modelMetrics: ModelMetricsRow;
+  paretoProfiles: ParetoProfileRow[];
+  monthlyTrend: MonthlyTrendRow[];
+  byCitySummary: CitySummaryRow[];
+  byChannel: ChannelRow[];
+  bySpecialty: SpecialtyRow[];
+  byLeadRange: LeadRangeRow[];
+  byPrior: PriorNoShowRow[];
+  byInsurance: InsuranceRow[];
+  heatmap: HeatmapRow[];
+  agenda: AgendaRow[];
 }

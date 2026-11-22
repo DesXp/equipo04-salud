@@ -1,13 +1,11 @@
-import { CheckCircle2, AlertTriangle, Loader2, ShieldCheck, RotateCw } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ShieldCheck, RotateCw } from 'lucide-react';
 import type { GovernanceRow, ModelMetricsRow } from '../types/clinical';
-import { fmtDec1, fmtDec2, fmtInt, parseBqDate } from '../services/bigqueryApi';
+import { fmtDec2, fmtInt } from '../services/bigqueryApi';
 
 interface GovernanceSectionProps {
   row: GovernanceRow | null;
-  mesesVentana: number;
   modelMetrics: ModelMetricsRow;
   loading: boolean;
-  isColdStart: boolean;
   isOffline: boolean;
   errorMsg?: string;
   onRetry: () => void;
@@ -15,10 +13,8 @@ interface GovernanceSectionProps {
 
 export function GovernanceSection({
   row,
-  mesesVentana,
   modelMetrics,
   loading,
-  isColdStart,
   isOffline,
   errorMsg,
   onRetry,
@@ -29,70 +25,12 @@ export function GovernanceSection({
   const piiInvalid = row ? Number(row.pii_invalid) : 0;
   const negLead = row ? Number(row.negative_lead) : 0;
   const triageNulls = row ? Number(row.triage_nulls) : 0;
-  const minDate = row ? parseBqDate(row.min_date) : '—';
-  const maxDate = row ? parseBqDate(row.max_date) : '—';
   const allClean = piiInvalid === 0 && dups === 0 && negLead === 0 && triageNulls === 0;
 
   return (
-    <section id="top" className="space-y-5">
-      {/* Encabezado Ejecutivo */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl space-y-1.5">
-          <p className="text-xs font-semibold text-sky-700">
-            Plataforma de Decisión Clínica y Financiera · Capa Gold BigQuery
-          </p>
-          <h1
-            className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
-            style={{ textWrap: 'balance' }}
-          >
-            Optimización de Agenda Clínica y Predicción de Ausentismo
-          </h1>
-          <p className="text-sm leading-relaxed text-slate-600">
-            Herramienta operativa para <strong className="font-semibold text-slate-800">Gerencia Médica</strong> (ROI y recuperación de capacidad) y <strong className="font-semibold text-slate-800">Admisión</strong> (semáforo de riesgo por cita en BigQuery ML).
-          </p>
-        </div>
-
-        <div className="shrink-0 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-700">
-          <span className="text-slate-500">Ventana analizada: </span>
-          <span className="font-mono font-semibold text-slate-900 tabular-nums">
-            {minDate} → {maxDate}
-          </span>
-          <span className="ml-1.5 text-slate-500 tabular-nums">
-            ({fmtDec1.format(mesesVentana)} meses)
-          </span>
-        </div>
-      </div>
-
-      {/* Banner de Cold Start */}
-      {isColdStart && (
-        <div
-          role="status"
-          className="flex flex-col gap-2 rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-900 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-sky-700" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">
-                Conectando con BigQuery (Cloud Run puede tardar unos segundos en despertar)…
-              </p>
-              <p className="text-xs text-sky-800">
-                Ejecutando 13 consultas paralelas agregadas sobre{' '}
-                <code className="font-mono text-[11px]">curated_equipo04.curated_appointments_gold</code> y{' '}
-                <code className="font-mono text-[11px]">ML.EVALUATE</code>.
-              </p>
-            </div>
-          </div>
-          <span className="shrink-0 text-xs font-medium text-sky-800">
-            FinOps · Solo agregaciones
-          </span>
-        </div>
-      )}
-
+    <section id="sec-gobernanza" aria-label="Auditoría de gobernanza de datos y FinOps">
       {/* Banda de Gobernanza & FinOps */}
-      <div
-        aria-label="Auditoría de gobernanza de datos y FinOps"
-        className="rounded-xl border border-slate-200 bg-white px-4 py-3.5"
-      >
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3.5">
         <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1.5 font-semibold text-slate-900">

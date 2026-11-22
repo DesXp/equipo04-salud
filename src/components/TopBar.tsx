@@ -56,6 +56,12 @@ export function TopBar({
             Resumen
           </a>
           <a
+            href="#sec-gerencia"
+            className="shrink-0 whitespace-nowrap py-1 transition-colors hover:text-sky-700 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+          >
+            Post-Evento
+          </a>
+          <a
             href="#sec-analitica"
             className="shrink-0 whitespace-nowrap py-1 transition-colors hover:text-sky-700 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
           >
@@ -78,12 +84,6 @@ export function TopBar({
             className="shrink-0 whitespace-nowrap py-1 transition-colors hover:text-sky-700 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
           >
             ROI
-          </a>
-          <a
-            href="#sec-gerencia"
-            className="shrink-0 whitespace-nowrap py-1 transition-colors hover:text-sky-700 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-          >
-            Post-Evento
           </a>
         </nav>
 

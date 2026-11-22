@@ -58,13 +58,7 @@ export function CriticalAgendaSection({
             )}
           </div>
           <p className="mt-0.5 text-xs text-slate-600">
-            Ordenadas por{' '}
-            <span className="font-mono font-medium text-slate-800">
-              prior_no_shows DESC, lead_time_days DESC
-            </span>
-            . Selecciona{' '}
-            <strong className="font-semibold text-sky-700">Evaluar en BQML</strong> para
-            precargar al paciente en el simulador.
+            Bandeja operativa para admisiones: prioriza citas sin confirmación SMS, con historial de reincidencia y alta anticipación para intervención preventiva o sobrecupo controlado.
           </p>
         </div>
 

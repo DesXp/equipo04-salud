@@ -48,6 +48,7 @@ export function SimulatorSection({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [scorePct, setScorePct] = useState<number | null>(null);
   const [predClass, setPredClass] = useState<string | null>(null);
+  const [isFallbackScore, setIsFallbackScore] = useState(false);
   const [lastEvaluatedFeatures, setLastEvaluatedFeatures] =
     useState<SimulatorFeatures | null>(null);
   const [whatIf, setWhatIf] = useState<WhatIfResult | null>(null);
@@ -117,6 +118,7 @@ export function SimulatorSection({
       const result = await predictAppointmentRisk(targetFeatures);
       setScorePct(result.probPct);
       setPredClass(result.predClass);
+      setIsFallbackScore(Boolean(result.isFallback));
       setLastEvaluatedFeatures({ ...targetFeatures });
 
       const nowStr = new Date().toLocaleTimeString('es-PE', {
@@ -192,6 +194,7 @@ export function SimulatorSection({
         baseVal = resBase.probPct;
         setScorePct(resBase.probPct);
         setPredClass(resBase.predClass);
+        setIsFallbackScore(Boolean(resBase.isFallback || resSms.isFallback));
         setLastEvaluatedFeatures({ ...features });
         setWhatIf({
           baseScore: baseVal,
@@ -205,6 +208,9 @@ export function SimulatorSection({
           predictAppointmentRisk(featApp),
           predictAppointmentRisk(feat7d),
         ]);
+        if (resSms.isFallback || resApp.isFallback || res7d.isFallback) {
+          setIsFallbackScore(true);
+        }
         setWhatIf({
           baseScore: baseVal,
           smsConfirmedScore: resSms.probPct,
@@ -650,9 +656,11 @@ export function SimulatorSection({
               <span className="text-xs font-semibold text-slate-600">
                 {scorePct === null
                   ? 'Sin evaluar'
-                  : predClass !== null
-                    ? `Clase ${predClass} (${predClass === '1' ? 'No-Show' : 'Asiste'})`
-                    : `Riesgo ${currentRisk?.level}`}
+                  : `${
+                      predClass !== null
+                        ? `Clase ${predClass} (${predClass === '1' ? 'No-Show' : 'Asiste'})`
+                        : `Riesgo ${currentRisk?.level}`
+                    }${isFallbackScore ? ' · Regla local v2' : ''}`}
               </span>
             </div>
 

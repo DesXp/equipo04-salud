@@ -167,10 +167,10 @@ export const OFFLINE_FALLBACK: {
     },
   ],
   modelMetrics: {
-    precision: 0.614,
+    precision: 0.6049,
     recall: 0.6456,
     accuracy: 0.8624,
-    f1_score: 0.6294,
+    f1_score: 0.6246,
     roc_auc: 0.7829,
   },
   paretoProfiles: [
@@ -183,12 +183,18 @@ export const OFFLINE_FALLBACK: {
     { sms_status: 'SMS Confirmado', prior_group: 'Sin faltas (0)', lead_group: '0–15 días', total: 14500, no_shows: 870, no_show_rate: 0.06 },
   ],
   monthlyTrend: [
-    { month_ym: '2024-01', total: 6150, no_shows: 1150, no_show_rate: 0.187, unconfirmed_sms_rate: 0.48 },
-    { month_ym: '2024-02', total: 5980, no_shows: 1088, no_show_rate: 0.182, unconfirmed_sms_rate: 0.46 },
+    { month_ym: '2024-01', total: 6250, no_shows: 1169, no_show_rate: 0.187, unconfirmed_sms_rate: 0.48 },
+    { month_ym: '2024-02', total: 5950, no_shows: 1083, no_show_rate: 0.182, unconfirmed_sms_rate: 0.46 },
     { month_ym: '2024-03', total: 6320, no_shows: 1169, no_show_rate: 0.185, unconfirmed_sms_rate: 0.47 },
-    { month_ym: '2024-04', total: 6200, no_shows: 1104, no_show_rate: 0.178, unconfirmed_sms_rate: 0.45 },
+    { month_ym: '2024-04', total: 6180, no_shows: 1100, no_show_rate: 0.178, unconfirmed_sms_rate: 0.45 },
     { month_ym: '2024-05', total: 6410, no_shows: 1154, no_show_rate: 0.18, unconfirmed_sms_rate: 0.46 },
-    { month_ym: '2024-06', total: 6290, no_shows: 1113, no_show_rate: 0.177, unconfirmed_sms_rate: 0.44 },
+    { month_ym: '2024-06', total: 6220, no_shows: 1101, no_show_rate: 0.177, unconfirmed_sms_rate: 0.44 },
+    { month_ym: '2024-07', total: 6340, no_shows: 1148, no_show_rate: 0.181, unconfirmed_sms_rate: 0.45 },
+    { month_ym: '2024-08', total: 6280, no_shows: 1130, no_show_rate: 0.18, unconfirmed_sms_rate: 0.44 },
+    { month_ym: '2024-09', total: 6190, no_shows: 1102, no_show_rate: 0.178, unconfirmed_sms_rate: 0.43 },
+    { month_ym: '2024-10', total: 6360, no_shows: 1158, no_show_rate: 0.182, unconfirmed_sms_rate: 0.45 },
+    { month_ym: '2024-11', total: 6210, no_shows: 1112, no_show_rate: 0.179, unconfirmed_sms_rate: 0.44 },
+    { month_ym: '2024-12', total: 6290, no_shows: 1126, no_show_rate: 0.179, unconfirmed_sms_rate: 0.43 },
   ],
   byCitySummary: [
     { center_city: 'Lima', total: 31500, no_shows: 5922, no_show_rate: 0.188, centers_count: 4 },
@@ -312,7 +318,7 @@ LIMIT 10`,
   capacity_daily,
   COALESCE(sms_confirmed, FALSE) AS sms_confirmed
 FROM ${TABLE_FQN}
-ORDER BY prior_no_shows DESC, lead_time_days DESC, appointment_date DESC
+ORDER BY COALESCE(sms_confirmed, FALSE) ASC, prior_no_shows DESC, lead_time_days DESC, appointment_date DESC
 LIMIT 12`,
 
   MODEL_METRICS: `SELECT precision, recall, accuracy, f1_score, roc_auc
@@ -492,29 +498,91 @@ export function extractNoShowProb(prediction: unknown): PredictionResult {
   return { probPct: clampedPct, predClass };
 }
 
-export async function predictAppointmentRisk(features: SimulatorFeatures): Promise<PredictionResult> {
-  const res = await apiPost<{ prediction?: unknown }>('/api/v1/ml/predict', {
-    model_name: 'health_noshow_classifier',
-    dataset: 'curated_equipo04',
-    features: {
-      lead_time_days: Number(features.lead_time_days),
-      appointment_channel: String(features.appointment_channel),
-      systolic_bp: Number(features.systolic_bp),
-      prior_no_shows: Number(features.prior_no_shows),
-      age: Number(features.age),
-      gender: String(features.gender),
-      insurance_type: String(features.insurance_type),
-      chronic_conditions: Number(features.chronic_conditions),
-      specialty: String(features.specialty),
-      capacity_daily: Number(features.capacity_daily),
-      center_city: String(features.center_city),
-      sms_confirmed: Boolean(features.sms_confirmed),
-    },
-  });
-  if (!res || res.prediction === undefined) {
-    throw new Error('El endpoint de predicción no devolvió el objeto esperado.');
+export function computeLocalNoShowFallback(features: SimulatorFeatures): PredictionResult {
+  const channelDelta: Record<string, number> = {
+    CALL_CENTER: 1.8,
+    WEB: 0.6,
+    WALK_IN: -0.5,
+    APP_MOBILE: -2.1,
+  };
+  const specialtyDelta: Record<string, number> = {
+    TRAUMA: 1.4,
+    GENERAL: 0.5,
+    CARDIOLOGY: 0.0,
+    PEDIATRICS: -0.7,
+    ONCOLOGY: -1.4,
+  };
+  const insuranceDelta: Record<string, number> = {
+    PUBLIC_SIS: 0.9,
+    ESSALUD: 0.4,
+    SELF_PAY: -0.4,
+    PRIVATE_EPS: -1.2,
+  };
+
+  const chAdj = channelDelta[features.appointment_channel] ?? 0;
+  const spAdj = specialtyDelta[features.specialty] ?? 0;
+  const insAdj = insuranceDelta[features.insurance_type] ?? 0;
+
+  let probPct: number;
+
+  if (!features.sms_confirmed && features.prior_no_shows >= 1 && features.lead_time_days > 30) {
+    // Perfil crítico v2: sin SMS + reincidente + anticipación > 30 días (~67.7%)
+    const extraPrior = Math.max(0, features.prior_no_shows - 1) * 1.4;
+    const extraLead = Math.min(4.0, (features.lead_time_days - 31) * 0.12);
+    probPct = 67.7 + extraPrior + extraLead + chAdj * 0.5 + spAdj * 0.4 + insAdj * 0.3;
+  } else if (
+    !features.sms_confirmed &&
+    features.prior_no_shows >= 1 &&
+    features.lead_time_days >= 16 &&
+    features.lead_time_days <= 30
+  ) {
+    // Perfil medio-alto v2: sin SMS + reincidente + anticipación 16-30 días (~48.6%)
+    const extraPrior = Math.max(0, features.prior_no_shows - 1) * 1.1;
+    const leadSpread = ((features.lead_time_days - 23) / 7) * 1.2;
+    probPct = 48.6 + extraPrior + leadSpread + chAdj * 0.5 + spAdj * 0.4 + insAdj * 0.3;
+  } else {
+    // Resto de perfiles (~8–14%) ajustado por SMS, historial, anticipación, canal y especialidad
+    const base = features.sms_confirmed ? 9.2 : 11.4;
+    const priorAdj = features.prior_no_shows >= 1 ? Math.min(2.2, features.prior_no_shows * 0.65) : -1.0;
+    const leadAdj = features.lead_time_days <= 7 ? -1.1 : features.lead_time_days > 30 ? 1.4 : 0.3;
+    probPct = Math.max(6.0, Math.min(16.5, base + priorAdj + leadAdj + chAdj * 0.6 + spAdj * 0.5 + insAdj * 0.4));
   }
-  return extractNoShowProb(res.prediction);
+
+  const clamped = Math.max(4.0, Math.min(92.0, Number(probPct.toFixed(1))));
+  return {
+    probPct: clamped,
+    predClass: clamped >= CONFIG.RISK_MEDIUM ? '1' : '0',
+    isFallback: true,
+  };
+}
+
+export async function predictAppointmentRisk(features: SimulatorFeatures): Promise<PredictionResult> {
+  try {
+    const res = await apiPost<{ prediction?: unknown }>('/api/v1/ml/predict', {
+      model_name: 'health_noshow_classifier',
+      dataset: 'curated_equipo04',
+      features: {
+        lead_time_days: Number(features.lead_time_days),
+        appointment_channel: String(features.appointment_channel),
+        systolic_bp: Number(features.systolic_bp),
+        prior_no_shows: Number(features.prior_no_shows),
+        age: Number(features.age),
+        gender: String(features.gender),
+        insurance_type: String(features.insurance_type),
+        chronic_conditions: Number(features.chronic_conditions),
+        specialty: String(features.specialty),
+        capacity_daily: Number(features.capacity_daily),
+        center_city: String(features.center_city),
+        sms_confirmed: Boolean(features.sms_confirmed),
+      },
+    });
+    if (!res || res.prediction === undefined) {
+      return computeLocalNoShowFallback(features);
+    }
+    return { ...extractNoShowProb(res.prediction), isFallback: false };
+  } catch {
+    return computeLocalNoShowFallback(features);
+  }
 }
 
 export interface RiskDescriptor {

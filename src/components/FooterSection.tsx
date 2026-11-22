@@ -1,16 +1,55 @@
+import { useRef, useState } from 'react';
+import { Download, Upload } from 'lucide-react';
 import { SQL_QUERIES, fmtDec2 } from '../services/bigqueryApi';
-import type { ModelMetricsRow } from '../types/clinical';
+import type { BigQuerySnapshot, ModelMetricsRow } from '../types/clinical';
 
 interface FooterSectionProps {
   modelMetrics: ModelMetricsRow;
   metricsOffline: boolean;
+  onExportSnapshot: () => void;
+  onImportSnapshot: (snapshot: BigQuerySnapshot) => void;
 }
 
-export function FooterSection({ modelMetrics, metricsOffline }: FooterSectionProps) {
+export function FooterSection({
+  modelMetrics,
+  metricsOffline,
+  onExportSnapshot,
+  onImportSnapshot,
+}: FooterSectionProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [snapshotNotice, setSnapshotNotice] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as Partial<BigQuerySnapshot>;
+      if (
+        !parsed ||
+        typeof parsed !== 'object' ||
+        !parsed.kpi ||
+        !parsed.modelMetrics ||
+        !Array.isArray(parsed.byChannel)
+      ) {
+        setSnapshotNotice('El archivo no corresponde a un snapshot válido de SaludConectada.');
+        return;
+      }
+      onImportSnapshot(parsed as BigQuerySnapshot);
+      setSnapshotNotice(
+        `Snapshot cargado (${parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString('es-PE') : file.name}).`,
+      );
+    } catch {
+      setSnapshotNotice('No se pudo leer el archivo JSON seleccionado.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   return (
     <footer className="mt-12 border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-[1360px] space-y-5 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500">
               Arquitectura en Google Cloud Platform
@@ -19,11 +58,52 @@ export function FooterSection({ modelMetrics, metricsOffline }: FooterSectionPro
               PostgreSQL → Datastream CDC → BigQuery Medallion (Dataform) → BigQuery ML → Cloud Run (sa-run-equipo04) → Web App
             </p>
           </div>
-          <span className="text-xs text-slate-500">
-            Proyecto: <code className="font-mono text-slate-700">datathon-dsc-uni</code> · Dataset:{' '}
-            <code className="font-mono text-slate-700">curated_equipo04</code>
-          </span>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs text-slate-500">
+              Proyecto: <code className="font-mono text-slate-700">datathon-dsc-uni</code> · Dataset:{' '}
+              <code className="font-mono text-slate-700">curated_equipo04</code>
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onExportSnapshot();
+                  setSnapshotNotice('Snapshot exportado: saludconectada_bigquery_snapshot_v2.json');
+                }}
+                className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+              >
+                <Download className="h-3.5 w-3.5 text-sky-700" aria-hidden="true" />
+                <span>Descargar Snapshot JSON (Backup BigQuery)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+              >
+                <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Importar JSON</span>
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleFileChange}
+                className="sr-only"
+                aria-label="Importar archivo snapshot JSON de BigQuery"
+              />
+            </div>
+          </div>
         </div>
+
+        {snapshotNotice && (
+          <p role="status" className="text-xs font-medium text-sky-800">
+            {snapshotNotice}
+          </p>
+        )}
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <details className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">

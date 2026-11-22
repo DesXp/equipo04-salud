@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { TopBar } from './components/TopBar';
 import { GovernanceSection } from './components/GovernanceSection';
 import { KpiSection } from './components/KpiSection';
@@ -15,11 +16,13 @@ import {
   OFFLINE_FALLBACK,
   SQL_QUERIES,
   calcMonthsBetween,
+  fmtDec1,
   parseBqDate,
   runQuery,
 } from './services/bigqueryApi';
 import type {
   AgendaRow,
+  BigQuerySnapshot,
   ChannelRow,
   CitySummaryRow,
   ConnectionStatus,
@@ -399,6 +402,77 @@ export default function App() {
     }
   };
 
+  const handleExportSnapshot = () => {
+    const snapshot: BigQuerySnapshot = {
+      exportedAt: new Date().toISOString(),
+      connectionStatus,
+      governance,
+      kpi,
+      modelMetrics,
+      paretoProfiles,
+      monthlyTrend,
+      byCitySummary,
+      byChannel: channels,
+      bySpecialty: specialties,
+      byLeadRange: leadRanges,
+      byPrior: priorNoShows,
+      byInsurance: insurances,
+      heatmap: heatmapRows,
+      agenda: agendaRows,
+    };
+
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'saludconectada_bigquery_snapshot_v2.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportSnapshot = (snapshot: BigQuerySnapshot) => {
+    if (snapshot.governance) setGovernance(snapshot.governance);
+    if (snapshot.kpi) setKpi(snapshot.kpi);
+    if (snapshot.modelMetrics) {
+      setModelMetrics({
+        precision: Number(snapshot.modelMetrics.precision ?? 0),
+        recall: Number(snapshot.modelMetrics.recall ?? CONFIG.RECALL),
+        accuracy: Number(snapshot.modelMetrics.accuracy ?? CONFIG.ACCURACY),
+        f1_score: Number(snapshot.modelMetrics.f1_score ?? 0),
+        roc_auc: Number(snapshot.modelMetrics.roc_auc ?? CONFIG.ROC_AUC),
+      });
+    }
+    if (Array.isArray(snapshot.byChannel)) setChannels(snapshot.byChannel);
+    if (Array.isArray(snapshot.bySpecialty)) setSpecialties(snapshot.bySpecialty);
+    if (Array.isArray(snapshot.byLeadRange)) setLeadRanges(snapshot.byLeadRange);
+    if (Array.isArray(snapshot.byPrior)) setPriorNoShows(snapshot.byPrior);
+    if (Array.isArray(snapshot.byInsurance)) setInsurances(snapshot.byInsurance);
+    if (Array.isArray(snapshot.heatmap)) setHeatmapRows(snapshot.heatmap);
+    if (Array.isArray(snapshot.agenda)) setAgendaRows(snapshot.agenda);
+    if (Array.isArray(snapshot.paretoProfiles)) setParetoProfiles(snapshot.paretoProfiles);
+    if (Array.isArray(snapshot.monthlyTrend)) setMonthlyTrend(snapshot.monthlyTrend);
+    if (Array.isArray(snapshot.byCitySummary)) setByCitySummary(snapshot.byCitySummary);
+
+    setIsColdStart(false);
+    setIsRefreshing(false);
+    setConnectionStatus('offline');
+    setGovOffline(true);
+    setKpiOffline(true);
+    setB1Offline(true);
+    setB2Offline(true);
+    setB3Offline(true);
+    setB4Offline(true);
+    setMetricsOffline(true);
+    setExecutiveOffline(true);
+    setGovError('Cargado desde snapshot JSON local');
+    setKpiError(undefined);
+    markUpdatedTime();
+  };
+
   const mesesVentana = governance
     ? calcMonthsBetween(
         parseBqDate(governance.min_date),
@@ -435,17 +509,68 @@ export default function App() {
       />
 
       <main className="mx-auto max-w-[1360px] space-y-8 px-4 py-6 sm:px-6 lg:px-8">
-        <GovernanceSection
-          row={governance}
-          mesesVentana={mesesVentana}
-          modelMetrics={modelMetrics}
-          loading={isRefreshing}
-          isColdStart={isColdStart}
-          isOffline={govOffline}
-          errorMsg={govError}
-          onRetry={() => void retrySection('governance')}
-        />
+        {/* Cabecera Ejecutiva + Cold Start */}
+        <section id="top" className="space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl space-y-1.5">
+              <p className="text-xs font-semibold text-sky-700">
+                Plataforma de Decisión Clínica y Financiera · Capa Gold BigQuery
+              </p>
+              <h1
+                className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+                style={{ textWrap: 'balance' }}
+              >
+                Optimización de Agenda Clínica y Predicción de Ausentismo
+              </h1>
+              <p className="text-sm leading-relaxed text-slate-600">
+                Herramienta operativa para{' '}
+                <strong className="font-semibold text-slate-800">Gerencia Médica</strong> (ROI y
+                recuperación de capacidad) y{' '}
+                <strong className="font-semibold text-slate-800">Admisión</strong> (semáforo de
+                riesgo por cita en BigQuery ML).
+              </p>
+            </div>
 
+            <div className="shrink-0 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-700">
+              <span className="text-slate-500">Ventana analizada: </span>
+              <span className="font-mono font-semibold text-slate-900 tabular-nums">
+                {governance ? parseBqDate(governance.min_date) : '—'} →{' '}
+                {governance ? parseBqDate(governance.max_date) : '—'}
+              </span>
+              <span className="ml-1.5 text-slate-500 tabular-nums">
+                ({fmtDec1.format(mesesVentana)} meses)
+              </span>
+            </div>
+          </div>
+
+          {isColdStart && (
+            <div
+              role="status"
+              className="flex flex-col gap-2 rounded-xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-sm text-sky-900 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-sky-700" aria-hidden="true" />
+                <div>
+                  <p className="font-semibold">
+                    Conectando con BigQuery (Cloud Run puede tardar unos segundos en despertar)…
+                  </p>
+                  <p className="text-xs text-sky-800">
+                    Ejecutando 13 consultas paralelas agregadas sobre{' '}
+                    <code className="font-mono text-[11px]">
+                      curated_equipo04.curated_appointments_gold
+                    </code>{' '}
+                    y <code className="font-mono text-[11px]">ML.EVALUATE</code>.
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 text-xs font-medium text-sky-800">
+                FinOps · Solo agregaciones
+              </span>
+            </div>
+          )}
+        </section>
+
+        {/* PASO 1: Impacto Macro y Gobernanza */}
         <KpiSection
           kpi={kpi}
           channels={channels}
@@ -455,6 +580,26 @@ export default function App() {
           isOffline={kpiOffline}
           errorMsg={kpiError}
           onRetry={() => void retrySection('kpis')}
+        />
+
+        <GovernanceSection
+          row={governance}
+          modelMetrics={modelMetrics}
+          loading={isRefreshing}
+          isOffline={govOffline}
+          errorMsg={govError}
+          onRetry={() => void retrySection('governance')}
+        />
+
+        {/* PASO 2: Diagnóstico Gerencial y Causa Raíz */}
+        <ExecutivePostEventSection
+          modelMetrics={modelMetrics}
+          paretoProfiles={paretoProfiles}
+          monthlyTrend={monthlyTrend}
+          byCitySummary={byCitySummary}
+          loading={isRefreshing}
+          isOffline={executiveOffline}
+          onRetry={() => void retrySection('executive')}
         />
 
         <section
@@ -480,7 +625,13 @@ export default function App() {
             isOffline={b3Offline}
             onRetry={() => void retrySection('b3')}
           />
+        </section>
 
+        {/* PASO 3: Operación Clínica e Intervención en Vivo */}
+        <section
+          aria-label="Operación clínica e intervención en vivo"
+          className="space-y-6"
+        >
           <CriticalAgendaSection
             rows={agendaRows}
             loading={isRefreshing}
@@ -488,43 +639,36 @@ export default function App() {
             onRetry={() => void retrySection('b4')}
             onEvaluateRow={handleEvaluateAgendaRow}
           />
+
+          <SimulatorSection
+            features={simFeatures}
+            onChangeFeatures={(next) => {
+              setPreloadedFromAgenda(false);
+              setSimFeatures(next);
+            }}
+            minAge={minAge}
+            maxAge={maxAge}
+            minCapacity={minCapacity}
+            maxCapacity={maxCapacity}
+            modelRecall={modelMetrics.recall}
+            preloadedFromAgenda={preloadedFromAgenda}
+            evalTrigger={evalTrigger}
+          />
         </section>
 
-        <SimulatorSection
-          features={simFeatures}
-          onChangeFeatures={(next) => {
-            setPreloadedFromAgenda(false);
-            setSimFeatures(next);
-          }}
-          minAge={minAge}
-          maxAge={maxAge}
-          minCapacity={minCapacity}
-          maxCapacity={maxCapacity}
-          modelRecall={modelMetrics.recall}
-          preloadedFromAgenda={preloadedFromAgenda}
-          evalTrigger={evalTrigger}
-        />
-
+        {/* PASO 4: Retorno Financiero */}
         <RoiCalculatorSection
           noShowsTotales={noShowsTotales}
           mesesVentana={mesesVentana}
           modelRecall={modelMetrics.recall}
-        />
-
-        <ExecutivePostEventSection
-          modelMetrics={modelMetrics}
-          paretoProfiles={paretoProfiles}
-          monthlyTrend={monthlyTrend}
-          byCitySummary={byCitySummary}
-          loading={isRefreshing}
-          isOffline={executiveOffline}
-          onRetry={() => void retrySection('executive')}
         />
       </main>
 
       <FooterSection
         modelMetrics={modelMetrics}
         metricsOffline={metricsOffline}
+        onExportSnapshot={handleExportSnapshot}
+        onImportSnapshot={handleImportSnapshot}
       />
     </div>
   );

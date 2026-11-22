@@ -367,22 +367,94 @@ export function ExecutivePostEventSection({
         </div>
       </div>
 
-      {/* a) Tarjetas reales de ML.EVALUATE */}
-      <div className="space-y-2.5">
+      {/* a) Comparativa explícita v1 vs v2 + Tarjetas reales de ML.EVALUATE */}
+      <div className="space-y-3">
         <h3 className="text-sm font-bold text-slate-900">
-          a) Desempeño del Modelo v2 en Producción (ML.EVALUATE)
+          a) Evolución del Modelo al Rescatar <code className="font-mono text-sky-800">sms_confirmed</code> del Triaje (v1 vs. v2 en vivo)
         </h3>
+
+        {/* Barra comparativa explícita v1 (Evento) vs v2 (Post-Evento) */}
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-4 py-3">
+            <p className="text-xs font-bold text-slate-700">
+              Modelo Inicial v1 (Sin SMS)
+            </p>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-slate-700 tabular-nums">
+              <span>
+                Accuracy <strong className="text-slate-900">57.15%</strong>
+              </span>
+              <span className="text-slate-300" aria-hidden="true">|</span>
+              <span>
+                ROC-AUC <strong className="text-slate-900">0.6408</strong>
+              </span>
+              <span className="text-slate-300" aria-hidden="true">|</span>
+              <span>
+                Precision <strong className="text-slate-900">24.88%</strong>
+              </span>
+              <span className="text-slate-300" aria-hidden="true">|</span>
+              <span>
+                Recall <strong className="text-slate-900">67.23%</strong>
+              </span>
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 px-4 py-3">
+            <p className="text-xs font-bold text-emerald-900">
+              Modelo Optimizado v2 (En vivo desde <code className="font-mono">ML.EVALUATE</code>)
+            </p>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-slate-800 tabular-nums">
+              <span>
+                Accuracy{' '}
+                <strong className="text-slate-950">
+                  {fmtDec2.format(Number(modelMetrics.accuracy) * 100)}%
+                </strong>{' '}
+                <span className="font-bold text-emerald-700">
+                  (+{fmtDec1.format(Number(modelMetrics.accuracy) * 100 - 57.15)} pp)
+                </span>
+              </span>
+              <span className="text-slate-300" aria-hidden="true">|</span>
+              <span>
+                ROC-AUC{' '}
+                <strong className="text-slate-950">
+                  {Number(modelMetrics.roc_auc).toFixed(4)}
+                </strong>{' '}
+                <span className="font-bold text-emerald-700">
+                  (+{(Number(modelMetrics.roc_auc) - 0.6408).toFixed(3)})
+                </span>
+              </span>
+              <span className="text-slate-300" aria-hidden="true">|</span>
+              <span>
+                Precision{' '}
+                <strong className="text-slate-950">
+                  {fmtDec2.format(Number(modelMetrics.precision) * 100)}%
+                </strong>{' '}
+                <span className="font-bold text-emerald-700">
+                  ({fmtDec1.format((Number(modelMetrics.precision) * 100) / 24.88)}x)
+                </span>
+              </span>
+              <span className="text-slate-300" aria-hidden="true">|</span>
+              <span>
+                Recall{' '}
+                <strong className="text-slate-950">
+                  {fmtDec2.format(Number(modelMetrics.recall) * 100)}%
+                </strong>
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* 5 tarjetas reales de ML.EVALUATE */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {evalCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-lg border border-slate-200 bg-slate-50/70 p-4"
+              className="rounded-lg border border-sky-200 bg-sky-50/40 p-3.5"
             >
-              <p className="text-xs font-semibold text-slate-500">{card.label}</p>
-              <p className="mt-1.5 font-[var(--font-display)] text-2xl font-bold text-slate-900 tabular-nums">
+              <p className="text-xs font-semibold text-slate-600">{card.label} v2</p>
+              <p className="mt-1 font-[var(--font-display)] text-xl font-bold text-slate-900 tabular-nums sm:text-2xl">
                 {card.value}
               </p>
-              <p className="mt-1 text-[11px] text-slate-600">{card.note}</p>
+              <p className="mt-1 text-[11px] leading-snug text-slate-600">{card.note}</p>
             </div>
           ))}
         </div>
