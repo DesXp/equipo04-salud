@@ -57,6 +57,13 @@ export function SimulatorSection({
 
   const gaugeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const gaugeChartRef = useRef<Chart<'doughnut'> | null>(null);
+  const resultPanelRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToResultOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      resultPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Render Gauge whenever scorePct updates
   useEffect(() => {
@@ -156,12 +163,14 @@ export function SimulatorSection({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    scrollToResultOnMobile();
     void executePrediction(features);
   };
 
   const handleWhatIf = async () => {
     setErrorMsg(null);
     setLoadingWhatIf(true);
+    scrollToResultOnMobile();
 
     try {
       const needsBase =
@@ -286,11 +295,15 @@ export function SimulatorSection({
         )}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* FORMULARIO DE 12 VARIABLES SEGMENTADO POR RELEVANCIA (ML.WEIGHTS) */}
-        <form onSubmit={handleSubmit} className="space-y-4 lg:col-span-7">
+      <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+        {/* FORMULARIO COMPACTO DE 12 VARIABLES POR RELEVANCIA (ML.WEIGHTS) */}
+        <form
+          id="sim-form-controls"
+          onSubmit={handleSubmit}
+          className="order-2 space-y-3.5 lg:order-1 lg:col-span-7"
+        >
           {/* BLOQUE 1 — Factores Determinantes de Riesgo (~88%) */}
-          <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50/40 p-4">
+          <div className="space-y-2.5 rounded-xl border border-amber-300 bg-amber-50/40 p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2">
               <h3 className="text-xs font-bold text-amber-950">
                 Nivel 1: Factores Críticos de Contacto e Historial (~88% del peso en BQML)
@@ -301,26 +314,32 @@ export function SimulatorSection({
             </div>
 
             {/* 1. sms_confirmed */}
-            <div className="rounded-lg border border-amber-200 bg-white p-3.5">
-              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-900">
-                    Confirmación SMS Previa
+            <div className="rounded-lg border border-amber-200 bg-white px-3 py-2.5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-bold text-slate-900">
+                      Confirmación SMS Previa
+                    </p>
+                    <span className="font-mono text-[11px] font-semibold text-red-700">
+                      #1 · ~52% aporte
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-slate-600">
+                    Sin SMS: <strong className="font-mono text-red-700">39.3%</strong> No-Show vs Con SMS:{' '}
+                    <strong className="font-mono text-emerald-700">8.0%</strong>
                   </p>
-                  <span className="inline-block rounded border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-800">
-                    Impacto Crítico #1 · ~52% aporte (Sin SMS: 39.3% No-Show vs Con SMS: 8.0%)
-                  </span>
                 </div>
                 <div
                   role="group"
                   aria-label="Confirmación SMS Previa"
-                  className="grid shrink-0 grid-cols-2 gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-1"
+                  className="grid shrink-0 grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1"
                 >
                   <button
                     type="button"
                     aria-pressed={!features.sms_confirmed}
                     onClick={() => updateField('sms_confirmed', false)}
-                    className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                    className={`h-8 whitespace-nowrap rounded-md px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
                       !features.sms_confirmed
                         ? 'bg-amber-100 text-amber-950 ring-1 ring-amber-400'
                         : 'text-slate-600 hover:text-slate-900'
@@ -332,7 +351,7 @@ export function SimulatorSection({
                     type="button"
                     aria-pressed={features.sms_confirmed}
                     onClick={() => updateField('sms_confirmed', true)}
-                    className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                    className={`h-8 whitespace-nowrap rounded-md px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
                       features.sms_confirmed
                         ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-300'
                         : 'text-slate-600 hover:text-slate-900'
@@ -344,18 +363,18 @@ export function SimulatorSection({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {/* 2. prior_no_shows */}
-              <div className="rounded-lg border border-amber-200 bg-white p-3.5">
+              <div className="rounded-lg border border-amber-200 bg-white px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
                   <label htmlFor="f-prior_no_shows">Faltas previas</label>
                   <span className="font-mono font-bold text-amber-800 tabular-nums">
                     {features.prior_no_shows}
                   </span>
                 </div>
-                <span className="mt-1 inline-block rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-900">
-                  Impacto Crítico #2 · ~21% aporte (Peso BQML: +0.0251 | Escalón &gt;=1 falta)
-                </span>
+                <p className="mt-0.5 font-mono text-[10px] font-medium text-amber-900">
+                  #2 · ~21% (+0.0251 | Escalón &gt;=1 falta)
+                </p>
                 <input
                   id="f-prior_no_shows"
                   type="range"
@@ -364,25 +383,25 @@ export function SimulatorSection({
                   step={1}
                   value={features.prior_no_shows}
                   onChange={(e) => updateField('prior_no_shows', Number(e.target.value))}
-                  className="mt-2.5 w-full cursor-pointer"
+                  className="mt-1.5 w-full cursor-pointer"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                <div className="flex justify-between font-mono text-[10px] text-slate-400">
                   <span>0</span>
                   <span>4</span>
                 </div>
               </div>
 
               {/* 3. lead_time_days */}
-              <div className="rounded-lg border border-amber-200 bg-white p-3.5">
+              <div className="rounded-lg border border-amber-200 bg-white px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
                   <label htmlFor="f-lead_time_days">Días de anticipación</label>
                   <span className="font-mono font-bold text-amber-800 tabular-nums">
                     {features.lead_time_days} d
                   </span>
                 </div>
-                <span className="mt-1 inline-block rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-900">
-                  Impacto Crítico #3 · ~15% aporte (Peso BQML: +0.0033/d | Quiebre &gt;15d y &gt;30d)
-                </span>
+                <p className="mt-0.5 font-mono text-[10px] font-medium text-amber-900">
+                  #3 · ~15% (+0.0033/d | Quiebre &gt;15d y &gt;30d)
+                </p>
                 <input
                   id="f-lead_time_days"
                   type="range"
@@ -391,9 +410,9 @@ export function SimulatorSection({
                   step={1}
                   value={features.lead_time_days}
                   onChange={(e) => updateField('lead_time_days', Number(e.target.value))}
-                  className="mt-2.5 w-full cursor-pointer"
+                  className="mt-1.5 w-full cursor-pointer"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                <div className="flex justify-between font-mono text-[10px] text-slate-400">
                   <span>0 d</span>
                   <span>60 d</span>
                 </div>
@@ -402,7 +421,7 @@ export function SimulatorSection({
           </div>
 
           {/* BLOQUE 2 — Factores Operativos de Sede, Canal y Cobertura (~9%) */}
-          <div className="space-y-3 rounded-xl border border-sky-200 bg-sky-50/30 p-4">
+          <div className="space-y-2.5 rounded-xl border border-sky-200 bg-sky-50/30 p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/70 pb-2">
               <h3 className="text-xs font-bold text-sky-950">
                 Nivel 2: Contexto Operativo de Reserva y Sede (~9% del peso en BQML)
@@ -412,23 +431,28 @@ export function SimulatorSection({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {/* 4. center_city */}
-              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
-                <label
-                  htmlFor="f-center_city"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Ciudad de la sede
-                </label>
-                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
-                  Moderado · ~3.2% (Cusco -0.0055 vs Trujillo +0.0010)
-                </span>
+              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <label
+                    htmlFor="f-center_city"
+                    className="text-xs font-semibold text-slate-800"
+                  >
+                    Ciudad de la sede
+                  </label>
+                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                    ~3.2%
+                  </span>
+                </div>
+                <p className="mb-1.5 font-mono text-[10px] text-slate-500">
+                  Cusco -0.0055 vs Trujillo +0.0010
+                </p>
                 <select
                   id="f-center_city"
                   value={features.center_city}
                   onChange={(e) => updateField('center_city', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20 sm:text-sm"
                 >
                   <option value="Lima">Lima</option>
                   <option value="Arequipa">Arequipa</option>
@@ -439,21 +463,26 @@ export function SimulatorSection({
               </div>
 
               {/* 5. specialty */}
-              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
-                <label
-                  htmlFor="f-specialty"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Especialidad
-                </label>
-                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
-                  Moderado · ~2.5% (Trauma +0.0043 vs Pediatría -0.0026)
-                </span>
+              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <label
+                    htmlFor="f-specialty"
+                    className="text-xs font-semibold text-slate-800"
+                  >
+                    Especialidad
+                  </label>
+                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                    ~2.5%
+                  </span>
+                </div>
+                <p className="mb-1.5 font-mono text-[10px] text-slate-500">
+                  Trauma +0.0043 vs Pediatría -0.0026
+                </p>
                 <select
                   id="f-specialty"
                   value={features.specialty}
                   onChange={(e) => updateField('specialty', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20 sm:text-sm"
                 >
                   <option value="TRAUMA">TRAUMA</option>
                   <option value="CARDIOLOGY">CARDIOLOGY</option>
@@ -464,21 +493,26 @@ export function SimulatorSection({
               </div>
 
               {/* 6. appointment_channel */}
-              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
-                <label
-                  htmlFor="f-appointment_channel"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Canal de reserva
-                </label>
-                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
-                  Moderado · ~2.0% (Walk-In +0.0023 vs App -0.0041)
-                </span>
+              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <label
+                    htmlFor="f-appointment_channel"
+                    className="text-xs font-semibold text-slate-800"
+                  >
+                    Canal de reserva
+                  </label>
+                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                    ~2.0%
+                  </span>
+                </div>
+                <p className="mb-1.5 font-mono text-[10px] text-slate-500">
+                  Walk-In +0.0023 vs App -0.0041
+                </p>
                 <select
                   id="f-appointment_channel"
                   value={features.appointment_channel}
                   onChange={(e) => updateField('appointment_channel', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20 sm:text-sm"
                 >
                   <option value="CALL_CENTER">CALL_CENTER</option>
                   <option value="WALK_IN">WALK_IN</option>
@@ -488,21 +522,26 @@ export function SimulatorSection({
               </div>
 
               {/* 7. insurance_type */}
-              <div className="rounded-lg border border-sky-200/80 bg-white p-3">
-                <label
-                  htmlFor="f-insurance_type"
-                  className="block text-xs font-semibold text-slate-800"
-                >
-                  Tipo de seguro
-                </label>
-                <span className="mt-1 mb-2 inline-block rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[10px] font-medium text-sky-900">
-                  Moderado · ~1.3% (SIS +0.0009 vs EPS -0.0026)
-                </span>
+              <div className="rounded-lg border border-sky-200/80 bg-white px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <label
+                    htmlFor="f-insurance_type"
+                    className="text-xs font-semibold text-slate-800"
+                  >
+                    Tipo de seguro
+                  </label>
+                  <span className="font-mono text-[10px] font-semibold text-sky-800">
+                    ~1.3%
+                  </span>
+                </div>
+                <p className="mb-1.5 font-mono text-[10px] text-slate-500">
+                  SIS +0.0009 vs EPS -0.0026
+                </p>
                 <select
                   id="f-insurance_type"
                   value={features.insurance_type}
                   onChange={(e) => updateField('insurance_type', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20 sm:text-sm"
                 >
                   <option value="PUBLIC_SIS">PUBLIC_SIS</option>
                   <option value="ESSALUD">ESSALUD</option>
@@ -514,7 +553,7 @@ export function SimulatorSection({
           </div>
 
           {/* BLOQUE 3 — Variables Clínicas de Triaje JSON y Demografía (~3%) */}
-          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
               <h3 className="text-xs font-bold text-slate-800">
                 Nivel 3: Variables Clínicas de Triaje y Demografía (~3% de ajuste fino en BQML)
@@ -524,18 +563,18 @@ export function SimulatorSection({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
               {/* 8. chronic_conditions */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <label htmlFor="f-chronic_conditions">Condiciones crónicas</label>
+                  <label htmlFor="f-chronic_conditions">Cond. crónicas</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
                     {features.chronic_conditions}
                   </span>
                 </div>
-                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                  Ajuste Clínico · ~1.2% (+0.0012/condición)
-                </span>
+                <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                  ~1.2% · +0.0012/cond.
+                </p>
                 <input
                   id="f-chronic_conditions"
                   type="range"
@@ -546,30 +585,33 @@ export function SimulatorSection({
                   onChange={(e) =>
                     updateField('chronic_conditions', Number(e.target.value))
                   }
-                  className="mt-2 w-full cursor-pointer"
+                  className="mt-1.5 w-full cursor-pointer"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                <div className="flex justify-between font-mono text-[10px] text-slate-400">
                   <span>0</span>
                   <span>5</span>
                 </div>
               </div>
 
               {/* 9. gender */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <label
-                  htmlFor="f-gender"
-                  className="block text-xs font-semibold text-slate-700"
-                >
-                  Sexo
-                </label>
-                <span className="mt-1 mb-2 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                  Ajuste Demográfico · ~0.8% (F +0.0008 vs M -0.0015)
-                </span>
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <label
+                    htmlFor="f-gender"
+                    className="text-xs font-semibold text-slate-700"
+                  >
+                    Sexo
+                  </label>
+                  <span className="font-mono text-[10px] text-slate-500">~0.8%</span>
+                </div>
+                <p className="mb-1.5 font-mono text-[10px] text-slate-500">
+                  F +0.0008 vs M -0.0015
+                </p>
                 <select
                   id="f-gender"
                   value={features.gender}
                   onChange={(e) => updateField('gender', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                  className="h-8 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs font-medium text-slate-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
                 >
                   <option value="F">F (Femenino)</option>
                   <option value="M">M (Masculino)</option>
@@ -577,16 +619,16 @@ export function SimulatorSection({
               </div>
 
               {/* 10. systolic_bp */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <label htmlFor="f-systolic_bp">Presión sistólica</label>
+                  <label htmlFor="f-systolic_bp">Presión sist.</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
                     {features.systolic_bp} mmHg
                   </span>
                 </div>
-                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                  Ajuste Triaje JSON · ~0.5% (-0.00009/mmHg)
-                </span>
+                <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                  ~0.5% · -0.00009/mmHg
+                </p>
                 <input
                   id="f-systolic_bp"
                   type="range"
@@ -595,25 +637,25 @@ export function SimulatorSection({
                   step={1}
                   value={features.systolic_bp}
                   onChange={(e) => updateField('systolic_bp', Number(e.target.value))}
-                  className="mt-2 w-full cursor-pointer"
+                  className="mt-1.5 w-full cursor-pointer"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                <div className="flex justify-between font-mono text-[10px] text-slate-400">
                   <span>95</span>
                   <span>175</span>
                 </div>
               </div>
 
               {/* 11. age */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <label htmlFor="f-age">Edad del paciente</label>
+                  <label htmlFor="f-age">Edad</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
                     {features.age} años
                   </span>
                 </div>
-                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                  Ajuste Demográfico · ~0.3% (-0.00001/año)
-                </span>
+                <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                  ~0.3% · -0.00001/año
+                </p>
                 <input
                   id="f-age"
                   type="range"
@@ -622,25 +664,25 @@ export function SimulatorSection({
                   step={1}
                   value={features.age}
                   onChange={(e) => updateField('age', Number(e.target.value))}
-                  className="mt-2 w-full cursor-pointer"
+                  className="mt-1.5 w-full cursor-pointer"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                <div className="flex justify-between font-mono text-[10px] text-slate-400">
                   <span>{minAge}</span>
                   <span>{maxAge}</span>
                 </div>
               </div>
 
               {/* 12. capacity_daily */}
-              <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-2">
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 sm:col-span-1 xl:col-span-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                   <label htmlFor="f-capacity_daily">Capacidad diaria sede</label>
                   <span className="font-mono font-bold text-sky-700 tabular-nums">
                     {features.capacity_daily}
                   </span>
                 </div>
-                <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                  Ajuste Sede · ~0.2% (-0.00001/cupo)
-                </span>
+                <p className="mt-0.5 font-mono text-[10px] text-slate-500">
+                  ~0.2% · -0.00001/cupo
+                </p>
                 <input
                   id="f-capacity_daily"
                   type="range"
@@ -649,9 +691,9 @@ export function SimulatorSection({
                   step={1}
                   value={features.capacity_daily}
                   onChange={(e) => updateField('capacity_daily', Number(e.target.value))}
-                  className="mt-2 w-full cursor-pointer"
+                  className="mt-1.5 w-full cursor-pointer"
                 />
-                <div className="mt-1 flex justify-between font-mono text-[11px] text-slate-400">
+                <div className="flex justify-between font-mono text-[10px] text-slate-400">
                   <span>{minCapacity}</span>
                   <span>{maxCapacity}</span>
                 </div>
@@ -660,11 +702,11 @@ export function SimulatorSection({
           </div>
 
           {/* Botones */}
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-3 pt-0.5">
             <button
               type="submit"
               disabled={loadingPredict || loadingWhatIf}
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-sky-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-sky-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loadingPredict && (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -680,7 +722,7 @@ export function SimulatorSection({
               type="button"
               onClick={handleWhatIf}
               disabled={loadingPredict || loadingWhatIf}
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loadingWhatIf ? (
                 <Loader2 className="h-4 w-4 animate-spin text-sky-700" aria-hidden="true" />
@@ -692,9 +734,12 @@ export function SimulatorSection({
           </div>
         </form>
 
-        {/* PANEL DE RESULTADO Y PROTOCOLO */}
-        <div className="flex flex-col justify-between space-y-4 lg:col-span-5">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5">
+        {/* PANEL DE RESULTADO Y PROTOCOLO (Sticky en Desktop, Primero en Mobile) */}
+        <div
+          ref={resultPanelRef}
+          className="order-1 space-y-3.5 lg:sticky lg:top-16 lg:order-2 lg:col-span-5 lg:self-start"
+        >
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
             <div className="flex items-center justify-between gap-2">
               <div className="relative flex items-center gap-1.5">
                 <h3 className="text-sm font-bold text-slate-900">
@@ -740,12 +785,12 @@ export function SimulatorSection({
             </div>
 
             {/* Gauge semicircular */}
-            <div className="relative mx-auto mt-3 h-44 w-72">
+            <div className="relative mx-auto mt-2 h-36 w-64">
               <canvas
                 ref={gaugeCanvasRef}
                 aria-label="Medidor semicircular de riesgo de ausentismo"
               />
-              <div className="pointer-events-none absolute inset-x-0 bottom-2 flex flex-col items-center">
+              <div className="pointer-events-none absolute inset-x-0 bottom-1.5 flex flex-col items-center">
                 <span
                   className="font-[var(--font-display)] text-3xl font-bold tracking-tight tabular-nums"
                   style={{ color: currentRisk ? currentRisk.color : '#0f172a' }}
@@ -763,6 +808,27 @@ export function SimulatorSection({
               </div>
             </div>
 
+            {/* Botones rápidos visibles en móvil arriba junto al gauge */}
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 lg:hidden">
+              <button
+                type="button"
+                onClick={() => void executePrediction(features)}
+                disabled={loadingPredict || loadingWhatIf}
+                className="inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-sky-600 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-sky-700 disabled:opacity-60"
+              >
+                {loadingPredict && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                )}
+                <span>Evaluar Riesgo BQML</span>
+              </button>
+              <a
+                href="#sim-form-controls"
+                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Editar 12 variables ↓
+              </a>
+            </div>
+
             {errorMsg && (
               <div
                 role="alert"
@@ -774,7 +840,7 @@ export function SimulatorSection({
 
             {/* Tarjeta de Acción Clínica */}
             <div
-              className={`mt-4 rounded-lg border p-4 transition-colors ${
+              className={`mt-3.5 rounded-lg border p-3.5 transition-colors ${
                 currentRisk
                   ? currentRisk.cardCls
                   : 'border-slate-200 bg-white'
@@ -784,7 +850,7 @@ export function SimulatorSection({
                 Acción clínica recomendada
               </p>
               <p
-                className={`mt-1 text-sm font-semibold ${
+                className={`mt-1 text-xs font-semibold leading-relaxed sm:text-sm ${
                   currentRisk ? currentRisk.textCls : 'text-slate-700'
                 }`}
               >
@@ -794,9 +860,96 @@ export function SimulatorSection({
               </p>
             </div>
 
+            {/* Resumen visible de los 12 parámetros usados (clave en móvil y desktop) */}
+            {(() => {
+              const displayFeatures = lastEvaluatedFeatures ?? features;
+              const isStale =
+                lastEvaluatedFeatures !== null &&
+                JSON.stringify(lastEvaluatedFeatures) !== JSON.stringify(features);
+
+              return (
+                <div className="mt-3.5 rounded-lg border border-slate-200 bg-white p-3 text-[11px]">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-800">
+                      {lastEvaluatedFeatures
+                        ? 'Parámetros evaluados en este score'
+                        : 'Parámetros seleccionados (listos para evaluar)'}
+                    </span>
+                    {isStale && (
+                      <span className="font-semibold text-amber-700">
+                        Editado · falta re-evaluar
+                      </span>
+                    )}
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+                    <div>
+                      <dt className="text-[10px] text-slate-500">SMS</dt>
+                      <dd
+                        className={`font-semibold ${
+                          displayFeatures.sms_confirmed
+                            ? 'text-emerald-700'
+                            : 'text-amber-800'
+                        }`}
+                      >
+                        {displayFeatures.sms_confirmed ? 'Confirmado' : 'Sin confirmar'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Faltas previas</dt>
+                      <dd className="font-mono font-semibold text-slate-900 tabular-nums">
+                        {displayFeatures.prior_no_shows}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Anticipación</dt>
+                      <dd className="font-mono font-semibold text-slate-900 tabular-nums">
+                        {displayFeatures.lead_time_days} días
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Ciudad</dt>
+                      <dd className="font-semibold text-slate-800">
+                        {displayFeatures.center_city}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Especialidad</dt>
+                      <dd className="font-mono font-semibold text-slate-800">
+                        {displayFeatures.specialty}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Canal</dt>
+                      <dd className="font-mono font-semibold text-slate-800">
+                        {displayFeatures.appointment_channel}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Seguro</dt>
+                      <dd className="font-mono text-slate-700">
+                        {displayFeatures.insurance_type}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Crónicas / PA</dt>
+                      <dd className="font-mono text-slate-700 tabular-nums">
+                        {displayFeatures.chronic_conditions} · {displayFeatures.systolic_bp} mmHg
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] text-slate-500">Edad / Sexo / Cap.</dt>
+                      <dd className="font-mono text-slate-700 tabular-nums">
+                        {displayFeatures.age}a · {displayFeatures.gender} · {displayFeatures.capacity_daily}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              );
+            })()}
+
             {/* Simulación contrafactual */}
             {whatIf && (
-              <div className="mt-4 space-y-2 rounded-lg border border-sky-200 bg-white p-4 text-xs">
+              <div className="mt-3.5 space-y-2 rounded-lg border border-sky-200 bg-white p-3.5 text-xs">
                 <p className="font-bold text-sky-900">
                   Simulación contrafactual (“¿Qué pasaría si…?”)
                 </p>
@@ -858,7 +1011,7 @@ export function SimulatorSection({
           </div>
 
           {/* Historial de la sesión */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-3.5">
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700">
                 Historial de sesión (últimas 5)
@@ -882,7 +1035,8 @@ export function SimulatorSection({
                     >
                       <span>{fmtDec1.format(item.scorePct)}%</span>
                       <span className="font-sans font-normal opacity-85">
-                        · {item.features.specialty} · {item.features.lead_time_days}d
+                        · {item.features.sms_confirmed ? 'SMS Sí' : 'Sin SMS'} ·{' '}
+                        {item.features.specialty} · {item.features.lead_time_days}d
                       </span>
                     </button>
                   );
