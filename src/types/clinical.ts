@@ -86,6 +86,7 @@ export interface AgendaRow {
   systolic_bp: number;
   chronic_conditions: number;
   capacity_daily: number;
+  sms_confirmed?: boolean;
 }
 
 export interface SimulatorFeatures {
@@ -100,6 +101,15 @@ export interface SimulatorFeatures {
   specialty: string;
   capacity_daily: number;
   center_city: string;
+  sms_confirmed: boolean;
+}
+
+export interface ModelMetricsRow {
+  precision: number;
+  recall: number;
+  accuracy: number;
+  f1_score: number;
+  roc_auc: number;
 }
 
 export interface PredictionResult {
@@ -116,7 +126,7 @@ export interface SimHistoryItem {
 
 export interface WhatIfResult {
   baseScore: number;
-  appScore: number;
+  smsConfirmedScore: number;
   lead7Score: number;
 }
 

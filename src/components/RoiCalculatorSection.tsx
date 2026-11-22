@@ -3,6 +3,7 @@ import { Calculator } from 'lucide-react';
 import {
   CONFIG,
   fmtDec1,
+  fmtDec2,
   fmtInt,
   fmtPEN,
   fmtPEN2,
@@ -11,17 +12,19 @@ import {
 interface RoiCalculatorSectionProps {
   noShowsTotales: number;
   mesesVentana: number;
+  modelRecall: number;
 }
 
 export function RoiCalculatorSection({
   noShowsTotales,
   mesesVentana,
+  modelRecall,
 }: RoiCalculatorSectionProps) {
   const [recoveryPct, setRecoveryPct] = useState<number>(40);
 
   const meses = Math.max(1, mesesVentana);
   const noShowsMes = noShowsTotales / meses;
-  const detectadasMes = noShowsMes * CONFIG.RECALL;
+  const detectadasMes = noShowsMes * modelRecall;
   const recuperadasMes = detectadasMes * (recoveryPct / 100);
 
   const horasMes = recuperadasMes * CONFIG.HOURS_PER_APPT;
@@ -47,9 +50,10 @@ export function RoiCalculatorSection({
               Calculadora de ROI y Recuperación de Consultorios (Gerencia Médica)
             </h2>
           </div>
-          <p className="mt-1 text-xs text-slate-600">
+          <p className="mt-1 text-xs text-slate-600 tabular-nums">
             Impacto financiero y operativo mensual proyectado al intervenir
-            proactivamente las citas detectadas por el modelo (Recall 67.23%).
+            proactivamente las citas detectadas por el modelo (Recall{' '}
+            {fmtDec2.format(modelRecall * 100)}%).
           </p>
           <p className="mt-1 text-[11px] font-medium text-slate-500">
             Supuestos: 0.5 h/cita · S/ 120/cita · Costo recordatorio: S/ 0.15/cita detectada
@@ -144,7 +148,8 @@ export function RoiCalculatorSection({
             meses = <strong>{fmtDec1.format(noShowsMes)}</strong> citas/mes
           </p>
           <p>
-            detectadasMes = {fmtDec1.format(noShowsMes)} × Recall ({CONFIG.RECALL}) ={' '}
+            detectadasMes = {fmtDec1.format(noShowsMes)} × Recall (
+            {modelRecall.toFixed(4)}) ={' '}
             <strong>{fmtDec1.format(detectadasMes)}</strong> citas/mes
           </p>
           <p>

@@ -18,9 +18,9 @@ export const TABLE_FQN = '`datathon-dsc-uni.curated_equipo04.curated_appointment
 export const CONFIG = {
   HOURS_PER_APPT: 0.5,
   COST_PER_APPT: 120,
-  RECALL: 0.6723,
-  ROC_AUC: 0.6408,
-  ACCURACY: 0.5715,
+  RECALL: 0.6456,
+  ROC_AUC: 0.7829,
+  ACCURACY: 0.8624,
   RISK_HIGH: 70,
   RISK_MEDIUM: 50,
   REMINDER_COST: 0.15,
@@ -45,6 +45,7 @@ export const DEFAULT_FEATURES: SimulatorFeatures = {
   center_city: 'Lima',
   insurance_type: 'PUBLIC_SIS',
   gender: 'F',
+  sms_confirmed: false,
 };
 
 export const OFFLINE_FALLBACK: {
@@ -136,6 +137,7 @@ export const OFFLINE_FALLBACK: {
       systolic_bp: 142,
       chronic_conditions: 2,
       capacity_daily: 140,
+      sms_confirmed: false,
     },
     {
       national_id_hash: '9f8e7d6c5b4a39281706f5e4d3c2b1a099887766554433221100ffeeddcc4412',
@@ -153,6 +155,7 @@ export const OFFLINE_FALLBACK: {
       systolic_bp: 128,
       chronic_conditions: 1,
       capacity_daily: 110,
+      sms_confirmed: false,
     },
   ],
 };
@@ -267,10 +270,14 @@ LIMIT 10`,
   insurance_type,
   systolic_bp,
   chronic_conditions,
-  capacity_daily
+  capacity_daily,
+  COALESCE(sms_confirmed, FALSE) AS sms_confirmed
 FROM ${TABLE_FQN}
 ORDER BY prior_no_shows DESC, lead_time_days DESC, appointment_date DESC
 LIMIT 12`,
+
+  MODEL_METRICS: `SELECT precision, recall, accuracy, f1_score, roc_auc
+FROM ML.EVALUATE(MODEL \`datathon-dsc-uni.curated_equipo04.health_noshow_classifier\`)`,
 } as const;
 
 export const fmtInt = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 });
@@ -415,7 +422,10 @@ export async function predictAppointmentRisk(features: SimulatorFeatures): Promi
   const res = await apiPost<{ prediction?: unknown }>('/api/v1/ml/predict', {
     model_name: 'health_noshow_classifier',
     dataset: 'curated_equipo04',
-    features,
+    features: {
+      ...features,
+      sms_confirmed: Boolean(features.sms_confirmed),
+    },
   });
   if (!res || res.prediction === undefined) {
     throw new Error('El endpoint de predicción no devolvió el objeto esperado.');

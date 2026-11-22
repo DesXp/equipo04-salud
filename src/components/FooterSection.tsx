@@ -1,6 +1,12 @@
-import { SQL_QUERIES } from '../services/bigqueryApi';
+import { SQL_QUERIES, fmtDec2 } from '../services/bigqueryApi';
+import type { ModelMetricsRow } from '../types/clinical';
 
-export function FooterSection() {
+interface FooterSectionProps {
+  modelMetrics: ModelMetricsRow;
+  metricsOffline: boolean;
+}
+
+export function FooterSection({ modelMetrics, metricsOffline }: FooterSectionProps) {
   return (
     <footer className="mt-12 border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-[1360px] space-y-5 px-4 py-8 sm:px-6 lg:px-8">
@@ -25,7 +31,7 @@ export function FooterSection() {
               Ficha del modelo (BigQuery ML — health_noshow_classifier)
             </summary>
             <div className="mt-3 space-y-3 border-t border-slate-200 pt-3 text-xs leading-relaxed text-slate-700">
-              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <ul className="grid grid-cols-2 gap-2 tabular-nums sm:grid-cols-3">
                 <li>
                   <span className="font-semibold text-slate-900">Tipo:</span> LOGISTIC_REG
                 </li>
@@ -34,16 +40,22 @@ export function FooterSection() {
                   auto_class_weights=TRUE
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-900">Recall:</span> 67.23%
+                  <span className="font-semibold text-slate-900">Recall:</span>{' '}
+                  {fmtDec2.format(modelMetrics.recall * 100)}%
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-900">ROC-AUC:</span> 0.6408
+                  <span className="font-semibold text-slate-900">ROC-AUC:</span>{' '}
+                  {modelMetrics.roc_auc.toFixed(4)}
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-900">Accuracy:</span> 57.15%
+                  <span className="font-semibold text-slate-900">Accuracy:</span>{' '}
+                  {fmtDec2.format(modelMetrics.accuracy * 100)}%
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-900">Target:</span> no_show_label
+                  <span className="font-semibold text-slate-900">Target:</span> no_show_label{' '}
+                  {metricsOffline && (
+                    <span className="text-[11px] text-amber-700">(respaldo)</span>
+                  )}
                 </li>
               </ul>
               <p className="rounded-lg border border-sky-200 bg-sky-50/70 p-2.5 text-sky-950">

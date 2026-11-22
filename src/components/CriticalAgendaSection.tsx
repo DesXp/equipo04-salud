@@ -127,6 +127,7 @@ export function CriticalAgendaSection({
                 <th className="px-3 py-2.5 text-left">Canal</th>
                 <th className="px-3 py-2.5 text-center">Faltas prev.</th>
                 <th className="px-3 py-2.5 text-center">Anticipación</th>
+                <th className="px-3 py-2.5 text-center">SMS</th>
                 <th className="px-3 py-2.5 text-center">Resultado real</th>
                 <th className="px-3 py-2.5 text-right">Acción BQML</th>
               </tr>
@@ -166,6 +167,13 @@ export function CriticalAgendaSection({
                     </td>
                     <td className="px-3 py-2.5 text-center font-mono text-xs text-slate-700 tabular-nums">
                       {fmtInt.format(Number(r.lead_time_days))} d
+                    </td>
+                    <td className="px-3 py-2.5 text-center text-xs font-medium">
+                      {r.sms_confirmed ? (
+                        <span className="text-emerald-700">Confirmado</span>
+                      ) : (
+                        <span className="text-amber-700">Sin confirmar</span>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       {noShow ? (

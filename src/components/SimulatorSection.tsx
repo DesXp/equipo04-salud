@@ -13,6 +13,7 @@ import type {
 } from '../types/clinical';
 import {
   fmtDec1,
+  fmtDec2,
   getRiskLevel,
   predictAppointmentRisk,
 } from '../services/bigqueryApi';
@@ -26,6 +27,7 @@ interface SimulatorSectionProps {
   maxAge: number;
   minCapacity: number;
   maxCapacity: number;
+  modelRecall: number;
   preloadedFromAgenda: boolean;
   evalTrigger: number;
 }
@@ -37,6 +39,7 @@ export function SimulatorSection({
   maxAge,
   minCapacity,
   maxCapacity,
+  modelRecall,
   preloadedFromAgenda,
   evalTrigger,
 }: SimulatorSectionProps) {
@@ -164,9 +167,9 @@ export function SimulatorSection({
         !lastEvaluatedFeatures ||
         JSON.stringify(lastEvaluatedFeatures) !== JSON.stringify(features);
 
-      const featApp: SimulatorFeatures = {
+      const featSmsConfirmed: SimulatorFeatures = {
         ...features,
-        appointment_channel: 'APP_MOBILE',
+        sms_confirmed: true,
       };
       const feat7d: SimulatorFeatures = {
         ...features,
@@ -176,9 +179,9 @@ export function SimulatorSection({
       let baseVal = scorePct ?? 0;
 
       if (needsBase) {
-        const [resBase, resApp, res7d] = await Promise.all([
+        const [resBase, resSms, res7d] = await Promise.all([
           predictAppointmentRisk(features),
-          predictAppointmentRisk(featApp),
+          predictAppointmentRisk(featSmsConfirmed),
           predictAppointmentRisk(feat7d),
         ]);
         baseVal = resBase.probPct;
@@ -187,17 +190,17 @@ export function SimulatorSection({
         setLastEvaluatedFeatures({ ...features });
         setWhatIf({
           baseScore: baseVal,
-          appScore: resApp.probPct,
+          smsConfirmedScore: resSms.probPct,
           lead7Score: res7d.probPct,
         });
       } else {
-        const [resApp, res7d] = await Promise.all([
-          predictAppointmentRisk(featApp),
+        const [resSms, res7d] = await Promise.all([
+          predictAppointmentRisk(featSmsConfirmed),
           predictAppointmentRisk(feat7d),
         ]);
         setWhatIf({
           baseScore: baseVal,
-          appScore: resApp.probPct,
+          smsConfirmedScore: resSms.probPct,
           lead7Score: res7d.probPct,
         });
       }
@@ -256,7 +259,7 @@ export function SimulatorSection({
             </h2>
           </div>
           <p className="mt-0.5 text-xs text-slate-600">
-            Evalúa las 11 variables clínicas y logísticas con{' '}
+            Evalúa las 12 variables clínicas y de contacto con{' '}
             <code className="font-mono text-slate-800">health_noshow_classifier</code> y
             obtén el protocolo recomendado para admisión.
           </p>
@@ -270,7 +273,7 @@ export function SimulatorSection({
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* FORMULARIO DE 11 VARIABLES */}
+        {/* FORMULARIO DE 12 VARIABLES */}
         <form onSubmit={handleSubmit} className="space-y-5 lg:col-span-7">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* lead_time_days */}
@@ -523,6 +526,50 @@ export function SimulatorSection({
             </div>
           </div>
 
+          {/* Confirmación SMS Previa (sms_confirmed) */}
+          <div className="rounded-lg border border-sky-200 bg-sky-50/50 p-3.5">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold text-slate-900">
+                  Confirmación SMS Previa
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  Variable de contacto directo (<code className="font-mono">sms_confirmed</code>)
+                </p>
+              </div>
+              <div
+                role="group"
+                aria-label="Confirmación SMS Previa"
+                className="grid grid-cols-2 gap-1.5 rounded-lg border border-slate-200 bg-white p-1"
+              >
+                <button
+                  type="button"
+                  aria-pressed={!features.sms_confirmed}
+                  onClick={() => updateField('sms_confirmed', false)}
+                  className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                    !features.sms_confirmed
+                      ? 'bg-amber-50 text-amber-900 ring-1 ring-amber-300'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  No confirmado (Riesgo)
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={features.sms_confirmed}
+                  onClick={() => updateField('sms_confirmed', true)}
+                  className={`h-9 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                    features.sms_confirmed
+                      ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-300'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Sí confirmó SMS
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Botones */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
@@ -587,7 +634,7 @@ export function SimulatorSection({
                     <code className="font-mono text-sky-300">auto_class_weights=TRUE</code>
                     ; este valor es un score de riesgo relativo, no la probabilidad
                     calibrada (la tasa real de No-Show es 18.07%). El umbral de decisión
-                    50% produce el Recall de 67.23%.
+                    50% produce el Recall de {fmtDec2.format(modelRecall * 100)}%.
                   </div>
                 )}
               </div>
@@ -670,21 +717,25 @@ export function SimulatorSection({
                 </div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 text-slate-700">
                   <span>
-                    (a) Canal <strong className="font-mono">APP_MOBILE</strong>
+                    (a) Si confirma <strong className="font-mono">SMS</strong>
                   </span>
                   <span className="font-mono tabular-nums">
                     <strong className="text-slate-900">
-                      {fmtDec1.format(whatIf.appScore)}%
+                      {fmtDec1.format(whatIf.smsConfirmedScore)}%
                     </strong>{' '}
                     (
-                    <span className={deltaColor(whatIf.appScore - whatIf.baseScore)}>
-                      {formatDelta(whatIf.appScore - whatIf.baseScore)}
+                    <span
+                      className={deltaColor(
+                        whatIf.smsConfirmedScore - whatIf.baseScore,
+                      )}
+                    >
+                      {formatDelta(whatIf.smsConfirmedScore - whatIf.baseScore)}
                     </span>
                     )
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-slate-700">
-                  <span>(b) Reagendar a 7 días</span>
+                  <span>(b) Reducir anticipación a 7 días</span>
                   <span className="font-mono tabular-nums">
                     <strong className="text-slate-900">
                       {fmtDec1.format(whatIf.lead7Score)}%

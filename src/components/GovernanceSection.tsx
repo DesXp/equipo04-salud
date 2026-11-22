@@ -1,10 +1,11 @@
 import { CheckCircle2, AlertTriangle, Loader2, ShieldCheck, RotateCw } from 'lucide-react';
-import type { GovernanceRow } from '../types/clinical';
-import { fmtDec1, fmtInt, parseBqDate } from '../services/bigqueryApi';
+import type { GovernanceRow, ModelMetricsRow } from '../types/clinical';
+import { fmtDec1, fmtDec2, fmtInt, parseBqDate } from '../services/bigqueryApi';
 
 interface GovernanceSectionProps {
   row: GovernanceRow | null;
   mesesVentana: number;
+  modelMetrics: ModelMetricsRow;
   loading: boolean;
   isColdStart: boolean;
   isOffline: boolean;
@@ -15,6 +16,7 @@ interface GovernanceSectionProps {
 export function GovernanceSection({
   row,
   mesesVentana,
+  modelMetrics,
   loading,
   isColdStart,
   isOffline,
@@ -74,8 +76,9 @@ export function GovernanceSection({
                 Conectando con BigQuery (Cloud Run puede tardar unos segundos en despertar)…
               </p>
               <p className="text-xs text-sky-800">
-                Ejecutando 9 consultas paralelas agregadas sobre{' '}
-                <code className="font-mono text-[11px]">curated_equipo04.curated_appointments_gold</code>.
+                Ejecutando 10 consultas paralelas agregadas sobre{' '}
+                <code className="font-mono text-[11px]">curated_equipo04.curated_appointments_gold</code> y{' '}
+                <code className="font-mono text-[11px]">ML.EVALUATE</code>.
               </p>
             </div>
           </div>
@@ -101,8 +104,9 @@ export function GovernanceSection({
             <span className="text-slate-300" aria-hidden="true">·</span>
             <span>Particionado Diario + Clustering (specialty, no_show_label)</span>
             <span className="text-slate-300" aria-hidden="true">·</span>
-            <span className="font-medium text-sky-800">
-              BQML LOGISTIC_REG · Recall 67.23% · AUC 0.64
+            <span className="font-medium text-sky-800 tabular-nums">
+              BQML LOGISTIC_REG · Recall {fmtDec2.format(modelMetrics.recall * 100)}% · AUC{' '}
+              {fmtDec2.format(modelMetrics.roc_auc)}
             </span>
           </div>
 

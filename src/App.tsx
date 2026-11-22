@@ -26,10 +26,19 @@ import type {
   InsuranceRow,
   KpiSummaryRow,
   LeadRangeRow,
+  ModelMetricsRow,
   PriorNoShowRow,
   SimulatorFeatures,
   SpecialtyRow,
 } from './types/clinical';
+
+const FALLBACK_MODEL_METRICS: ModelMetricsRow = {
+  precision: 0,
+  recall: CONFIG.RECALL,
+  accuracy: CONFIG.ACCURACY,
+  f1_score: 0,
+  roc_auc: CONFIG.ROC_AUC,
+};
 
 export default function App() {
   const [connectionStatus, setConnectionStatus] =
@@ -61,6 +70,11 @@ export default function App() {
   const [agendaRows, setAgendaRows] = useState<AgendaRow[]>([]);
   const [b4Offline, setB4Offline] = useState(false);
 
+  const [modelMetrics, setModelMetrics] = useState<ModelMetricsRow>(
+    FALLBACK_MODEL_METRICS,
+  );
+  const [metricsOffline, setMetricsOffline] = useState(false);
+
   const [simFeatures, setSimFeatures] = useState<SimulatorFeatures>(DEFAULT_FEATURES);
   const [preloadedFromAgenda, setPreloadedFromAgenda] = useState(false);
   const [evalTrigger, setEvalTrigger] = useState(0);
@@ -89,6 +103,7 @@ export default function App() {
       runQuery<InsuranceRow>(SQL_QUERIES.BY_INSURANCE),
       runQuery<HeatmapRow>(SQL_QUERIES.HEATMAP_CENTER_SPECIALTY),
       runQuery<AgendaRow>(SQL_QUERIES.CRITICAL_AGENDA),
+      runQuery<ModelMetricsRow>(SQL_QUERIES.MODEL_METRICS),
     ] as const;
 
     const settled = await Promise.allSettled(tasks);
@@ -109,6 +124,7 @@ export default function App() {
       insRes,
       heatRes,
       agendaRes,
+      metricsRes,
     ] = settled;
 
     // 0) Governance
@@ -208,6 +224,22 @@ export default function App() {
       agendaRes.status === 'fulfilled' ? agendaRes.value : OFFLINE_FALLBACK.agenda,
     );
     setB4Offline(agendaRes.status !== 'fulfilled');
+
+    // ML.EVALUATE live metrics
+    if (metricsRes.status === 'fulfilled' && metricsRes.value[0]) {
+      const m = metricsRes.value[0];
+      setModelMetrics({
+        precision: Number(m.precision ?? 0),
+        recall: Number(m.recall ?? CONFIG.RECALL),
+        accuracy: Number(m.accuracy ?? CONFIG.ACCURACY),
+        f1_score: Number(m.f1_score ?? 0),
+        roc_auc: Number(m.roc_auc ?? CONFIG.ROC_AUC),
+      });
+      setMetricsOffline(false);
+    } else {
+      setModelMetrics(FALLBACK_MODEL_METRICS);
+      setMetricsOffline(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -295,6 +327,7 @@ export default function App() {
       center_city: row.center_city,
       insurance_type: row.insurance_type,
       gender: row.gender,
+      sms_confirmed: Boolean(row.sms_confirmed),
     });
     setPreloadedFromAgenda(true);
     setEvalTrigger((c) => c + 1);
@@ -344,6 +377,7 @@ export default function App() {
         <GovernanceSection
           row={governance}
           mesesVentana={mesesVentana}
+          modelMetrics={modelMetrics}
           loading={isRefreshing}
           isColdStart={isColdStart}
           isOffline={govOffline}
@@ -405,6 +439,7 @@ export default function App() {
           maxAge={maxAge}
           minCapacity={minCapacity}
           maxCapacity={maxCapacity}
+          modelRecall={modelMetrics.recall}
           preloadedFromAgenda={preloadedFromAgenda}
           evalTrigger={evalTrigger}
         />
@@ -412,10 +447,14 @@ export default function App() {
         <RoiCalculatorSection
           noShowsTotales={noShowsTotales}
           mesesVentana={mesesVentana}
+          modelRecall={modelMetrics.recall}
         />
       </main>
 
-      <FooterSection />
+      <FooterSection
+        modelMetrics={modelMetrics}
+        metricsOffline={metricsOffline}
+      />
     </div>
   );
 }
